@@ -43,9 +43,13 @@ jobs:
           OPENAI_API_KEY:   ${{ secrets.OPENAI_API_KEY }}
           RESEND_API_KEY:   ${{ secrets.RESEND_API_KEY }}
           RECIPIENT_EMAIL:  ${{ secrets.RECIPIENT_EMAIL }}
+          ADMIN_EMAIL:      ${{ secrets.ADMIN_EMAIL }}
           SENDER_EMAIL:     ${{ secrets.SENDER_EMAIL }}
           SENDER_NAME:      ${{ secrets.SENDER_NAME }}
           GITHUB_TOKEN:     ${{ secrets.GITHUBB_TOKEN }}
+          DATABASE_URL:     ${{ secrets.DATABASE_URL }}
+          APP_BASE_URL:     ${{ secrets.APP_BASE_URL }}
+          NEWSLETTER_TOKEN_SECRET: ${{ secrets.NEWSLETTER_TOKEN_SECRET }}
         run: python main.py
 
       # OPEN SOURCE PERSISTENCE: Save the updated DB back to Cache
