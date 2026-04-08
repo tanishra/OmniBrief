@@ -15,6 +15,8 @@ sent_history.json
 *.db
 *.db-journal
 previews/
-templates
+templates/*
+!templates/
+!templates/digest.html
 .vscode
 .DS_Store
