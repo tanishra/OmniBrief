@@ -39,7 +39,7 @@ from src.persistence              import (
     mark_sent,
     record_delivery,
 )
-from src.agent_graph              import create_graph, DB_FILE
+from src.agent_graph              import create_graph
 
 
 def validate_config() -> None:
@@ -112,27 +112,24 @@ async def run() -> None:
             if not is_duplicate(item.get("url", ""), history):
                 filtered_data[section].append(item)
     
-    # ── Step 4: Run LangGraph Engine with Async Checkpointer ──
-    from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
-    
-    async with AsyncSqliteSaver.from_conn_string(DB_FILE) as saver:
-        graph = create_graph(checkpointer=saver)
-        
-        initial_state = {
-            "raw_data": filtered_data,
-            "health_stats": health_stats,
-            "ranked_data": {},
-            "summarized_data": {},
-            "synthesis": "",
-            "iterations": 0
-        }
-        
-        from datetime import datetime
-        today_id = datetime.now().strftime("%Y-%m-%d")
-        config = {"configurable": {"thread_id": today_id}}
-        
-        print(f"\n🚀 Executing Intelligence Graph (Thread: {today_id})...")
-        final_state = await graph.ainvoke(initial_state, config=config)
+    # ── Step 4: Run LangGraph Engine ───────────────────────────
+    graph = create_graph()
+
+    initial_state = {
+        "raw_data": filtered_data,
+        "health_stats": health_stats,
+        "ranked_data": {},
+        "summarized_data": {},
+        "synthesis": "",
+        "iterations": 0
+    }
+
+    from datetime import datetime
+    today_id = datetime.now().strftime("%Y-%m-%d")
+    config = {"configurable": {"thread_id": today_id}}
+
+    print(f"\n🚀 Executing Intelligence Graph (Thread: {today_id})...")
+    final_state = await graph.ainvoke(initial_state, config=config)
     
     # ── Step 5: Render & Deliver ──────────────────────────────
     summarized = final_state["summarized_data"]
