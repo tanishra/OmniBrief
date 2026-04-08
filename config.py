@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ── Recipients ────────────────────────────────────────────────────────────────
-RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL", "tanishrajput9@gmail.com")   # ← your Gmail (Resend free tier: must match your account email)
+RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL", "tanishrajput9@gmail.com")   # Legacy bootstrap recipient for first-run setup
+ADMIN_EMAIL     = os.getenv("ADMIN_EMAIL", RECIPIENT_EMAIL)
 SENDER_EMAIL    = os.getenv("SENDER_EMAIL", "onboarding@resend.dev")
 SENDER_NAME     = os.getenv("SENDER_NAME", "OmniBrief")
 
@@ -17,11 +18,20 @@ SENDER_NAME     = os.getenv("SENDER_NAME", "OmniBrief")
 OPENAI_API_KEY  = os.getenv("OPENAI_API_KEY", "")
 RESEND_API_KEY  = os.getenv("RESEND_API_KEY", "")
 GITHUB_TOKEN    = os.getenv("GITHUB_TOKEN", "")   # Optional but recommended
+DATABASE_URL    = os.getenv("DATABASE_URL", "")
+APP_BASE_URL    = os.getenv("APP_BASE_URL", "http://localhost:8000")
+NEWSLETTER_TOKEN_SECRET = os.getenv("NEWSLETTER_TOKEN_SECRET", "")
 
 # ── OpenAI Settings ───────────────────────────────────────────────────────────
 OPENAI_MODEL       = "gpt-4o-mini"
 OPENAI_MAX_TOKENS  = 200
 OPENAI_TEMPERATURE = 0.3
+
+# ── Newsletter Settings ───────────────────────────────────────────────────────
+SUBSCRIBE_TOKEN_TTL_HOURS   = int(os.getenv("SUBSCRIBE_TOKEN_TTL_HOURS", "48"))
+UNSUBSCRIBE_TOKEN_TTL_DAYS  = int(os.getenv("UNSUBSCRIBE_TOKEN_TTL_DAYS", "30"))
+MAX_BROADCAST_CONCURRENCY   = int(os.getenv("MAX_BROADCAST_CONCURRENCY", "5"))
+BOOTSTRAP_RECIPIENT_AS_SUBSCRIBER = os.getenv("BOOTSTRAP_RECIPIENT_AS_SUBSCRIBER", "true").lower() == "true"
 
 # ── Fetch Limits ──────────────────────────────────────────────────────────────
 HN_MAX_ITEMS          = 10
