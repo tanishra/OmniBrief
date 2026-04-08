@@ -4,16 +4,12 @@ The LangGraph Intelligence Engine.
 V7.2: LLM-based Ranking, Routing, and Cost Tracking.
 """
 
-import sqlite3
 import json
 from typing import List, Dict, Any, TypedDict
 from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langchain_openai import ChatOpenAI
-from config import OPENAI_API_KEY, OPENAI_MODEL, USER_INTERESTS
+from config import OPENAI_API_KEY
 from src.cost_tracker import tracker
-
-DB_FILE = "digest_history.db"
 
 class AgentState(TypedDict):
     raw_data: Dict[str, List[Dict[str, Any]]]
