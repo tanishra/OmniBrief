@@ -166,6 +166,15 @@
     <div class="footer">
       <strong>OmniBrief.</strong><br>
       A personal automated briefing on the future of autonomous systems.
+      {% if unsubscribe_url %}
+      <br><br>
+      <a href="{{ unsubscribe_url }}" style="display:inline-block;background:#111827;color:#ffffff;padding:10px 16px;border-radius:999px;text-decoration:none;font-weight:bold;">
+        Unsubscribe
+      </a>
+      <br>
+      <span style="display:block;margin-top:12px;">If the button does not work, use this link:</span>
+      <a href="{{ unsubscribe_url }}" style="color:#ff4500;word-break:break-all;">{{ unsubscribe_url }}</a>
+      {% endif %}
     </div>
 
   </div>
