@@ -1,0 +1,16 @@
+# Core Orchestration
+langgraph==0.2.39
+langgraph-checkpoint-sqlite==3.0.3
+langchain-openai==0.3.6
+
+# Network & Scraping
+httpx==0.28.1
+beautifulsoup4==4.14.3
+playwright==1.57.0
+feedparser==6.0.11
+
+# Templating & Utilities
+jinja2==3.1.4
+python-dotenv==1.0.1
+aiosqlite==0.21.0
+typing-extensions>=4.15.0
