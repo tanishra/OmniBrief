@@ -33,25 +33,17 @@ class CostTracker:
             model = detail["model"]
             # Fallback to mini if unknown
             price = PRICES.get(model, PRICES["gpt-4o-mini"])
-            cost = (detail["input"] / 1_000_000 * price["input"]) + 
-                   (detail["output"] / 1_000_000 * price["output"])
+            cost = (detail["input"] / 1_000_000 * price["input"]) + (detail["output"] / 1_000_000 * price["output"])
             total_cost += cost
         return total_cost
 
     def get_summary(self) -> str:
         cost = self.calculate_total_cost()
-        return (
-            f"
---- 💰 PRIVATE COST AUDIT ---"
-            f"
-Total Input Tokens:  {self.total_input_tokens:,}"
-            f"
-Total Output Tokens: {self.total_output_tokens:,}"
-            f"
-Estimated Run Cost:  ${cost:.4f} (~₹{cost*83:.2f})"
-            f"
----------------------------
-"
+        return (f"--- 💰 PRIVATE COST AUDIT ---"
+                f"Total Input Tokens:  {self.total_input_tokens:,}"
+                f"Total Output Tokens: {self.total_output_tokens:,}"
+                f"Estimated Run Cost:  ${cost:.4f} (~₹{cost*83:.2f})"
+                f"---------------------------"
         )
 
 # Global instance for the run
