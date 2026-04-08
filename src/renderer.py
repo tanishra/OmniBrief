@@ -35,6 +35,7 @@ def render_digest(summarized_data: Dict[str, List[Dict[str, Any]]], health_stats
         "papers":   len(arxiv_items),
         "repos":    len(github_items),
         "news":     len(hn_items) + len(news_items),
+        "products": len(ph_items),
         "reddit":   len(reddit_items),
     }
 
