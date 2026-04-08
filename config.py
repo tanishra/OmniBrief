@@ -31,6 +31,14 @@ RSS_MAX_PER_FEED      = 3
 PRODUCTHUNT_MAX       = 10
 REDDIT_MAX_ITEMS      = 10
 
+# ── Reddit Sources ────────────────────────────────────────────────────────────
+REDDIT_SUBREDDITS = [
+    "MachineLearning",
+    "LocalLLaMA",
+    "artificial",
+    "singularity",
+]
+
 # ── ArXiv Categories (Comprehensive AI coverage) ─────────────────────────────
 ARXIV_CATEGORIES = [
     "cs.AI",    # Artificial Intelligence
