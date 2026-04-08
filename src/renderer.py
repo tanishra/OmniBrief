@@ -12,7 +12,12 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
 
 
-def render_digest(summarized_data: Dict[str, List[Dict[str, Any]]], health_stats: Dict = None, synthesis: str = "") -> str:
+def render_digest(
+    summarized_data: Dict[str, List[Dict[str, Any]]],
+    health_stats: Dict = None,
+    synthesis: str = "",
+    unsubscribe_url: str = "",
+) -> str:
     """
     Takes the summarized digest data and renders it into the HTML email template.
     """
@@ -52,7 +57,8 @@ def render_digest(summarized_data: Dict[str, List[Dict[str, Any]]], health_stats
         ph_items      = ph_items,
         reddit_items  = reddit_items,
         health        = health_stats or {},
-        synthesis     = synthesis
+        synthesis     = synthesis,
+        unsubscribe_url = unsubscribe_url,
     )
 
     return html
