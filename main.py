@@ -10,6 +10,10 @@ import os
 sys.path.insert(0, os.path.dirname(__file__))
 
 from config import (
+    APP_BASE_URL,
+    DATABASE_URL,
+    MAX_BROADCAST_CONCURRENCY,
+    NEWSLETTER_TOKEN_SECRET,
     OPENAI_API_KEY, RESEND_API_KEY,
     HN_MAX_ITEMS, ARXIV_MAX_ITEMS, GITHUB_TRENDING_MAX,
     RSS_MAX_PER_FEED, PRODUCTHUNT_MAX, REDDIT_MAX_ITEMS,
@@ -24,7 +28,17 @@ from src.fetchers.producthunt     import fetch_producthunt
 from src.fetchers.reddit          import fetch_reddit
 from src.renderer                 import render_digest
 from src.mailer                   import send_digest
-from src.persistence              import load_history, mark_sent, cleanup_history, is_duplicate
+from src.persistence              import (
+    cleanup_history,
+    create_unsubscribe_link,
+    ensure_default_subscriber,
+    init_db,
+    is_duplicate,
+    list_active_subscribers_for_campaign,
+    load_history,
+    mark_sent,
+    record_delivery,
+)
 from src.agent_graph              import create_graph, DB_FILE
 
 
@@ -33,6 +47,9 @@ def validate_config() -> None:
     missing = []
     if not OPENAI_API_KEY: missing.append("OPENAI_API_KEY")
     if not RESEND_API_KEY: missing.append("RESEND_API_KEY")
+    if not DATABASE_URL: missing.append("DATABASE_URL")
+    if not APP_BASE_URL: missing.append("APP_BASE_URL")
+    if not NEWSLETTER_TOKEN_SECRET: missing.append("NEWSLETTER_TOKEN_SECRET")
     if missing:
         raise EnvironmentError(f"Missing required environment variables: {', '.join(missing)}")
 
@@ -80,6 +97,8 @@ async def run() -> None:
 
     # ── Step 1: Init ──────────────────────────────────────────
     validate_config()
+    init_db()
+    ensure_default_subscriber()
     history = load_history()
 
     # ── Step 2: Parallel Fetch ────────────────────────────────
@@ -123,14 +142,63 @@ async def run() -> None:
         print("📭 No new unique items found. Skipping email.")
         return
 
-    print(f"\n🎨 Rendering and Delivering {total_items} items...")
-    html = render_digest(summarized, health_stats, final_state["synthesis"])
-    await send_digest(html)
+    from datetime import datetime
+
+    campaign_key = datetime.now().strftime("%Y-%m-%d")
+    subscribers = list_active_subscribers_for_campaign(campaign_key)
+    if not subscribers:
+        print("📭 No active subscribers found for this campaign. Skipping email.")
+        return
+
+    print(f"\n🎨 Rendering and Delivering {total_items} items to {len(subscribers)} subscribers...")
+
+    semaphore = asyncio.Semaphore(MAX_BROADCAST_CONCURRENCY)
+
+    async def deliver_to_subscriber(subscriber: dict) -> tuple[bool, str]:
+        async with semaphore:
+            unsubscribe_url = create_unsubscribe_link(subscriber["id"])
+            html = render_digest(
+                summarized,
+                health_stats,
+                final_state["synthesis"],
+                unsubscribe_url=unsubscribe_url,
+            )
+            try:
+                result = await send_digest(html, subscriber["email"])
+                record_delivery(
+                    subscriber["id"],
+                    campaign_key,
+                    status="sent",
+                    resend_message_id=result.get("id"),
+                )
+                return True, subscriber["email"]
+            except Exception as exc:
+                record_delivery(
+                    subscriber["id"],
+                    campaign_key,
+                    status="failed",
+                    error=str(exc)[:1000],
+                )
+                print(f"  ⚠️ Delivery failed for {subscriber['email']}: {exc}")
+                return False, subscriber["email"]
+
+    delivery_results = await asyncio.gather(*(deliver_to_subscriber(s) for s in subscribers))
+    sent_count = sum(1 for ok, _ in delivery_results if ok)
+    failed_count = len(delivery_results) - sent_count
+
+    print(f"📬 Broadcast complete: {sent_count} sent, {failed_count} failed.")
+    if sent_count == 0:
+        raise RuntimeError("Digest generation completed, but delivery failed for all subscribers.")
     
     # Commit to history
     for section, items in summarized.items():
         for item in items:
-            mark_sent(item.get("url", ""))
+            mark_sent(
+                item.get("url", ""),
+                title=item.get("title") or item.get("name", ""),
+                source=item.get("source", ""),
+                section=section,
+            )
     
     cleanup_history()
     
