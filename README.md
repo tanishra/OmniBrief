@@ -1,18 +1,19 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f172a,50:1d4ed8,100:312e81&height=220&section=header&text=OmniBrief&fontSize=72&fontColor=FFFFFF&fontAlignY=40&desc=Autonomous%20Technical%20Research%20Briefing%20for%20Python%20Engineers&descAlignY=63&descColor=ffffff&descSize=18" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f172a,50:1d4ed8,100:312e81&height=220&section=header&text=OmniBrief&fontSize=72&fontColor=FFFFFF&fontAlignY=40&desc=AI-Powered%20Technical%20Newsletter%20for%20Builders&descAlignY=63&descColor=ffffff&descSize=18" width="100%"/>
 
 <br/>
 
 [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![OpenAI](https://img.shields.io/badge/GPT--4o-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com/)
+[![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com/)
 [![LangGraph](https://img.shields.io/badge/LangGraph-2D333B?style=for-the-badge&logo=langchain&logoColor=white)](https://langchain-ai.github.io/langgraph/)
-[![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)](https://playwright.dev/)
-[![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-111111?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 
 <br/>
 
-> **OmniBrief is an autonomous discovery engine that scans the global AI frontier, using a multi-agent LangGraph pipeline to deliver a high-signal technical briefing directly to your inbox.**
+> **OmniBrief is an AI-powered technical newsletter platform that scans the global AI frontier, curates the highest-signal developments, and delivers one sharp daily briefing to your inbox.**
 
 <br/>
 
@@ -21,81 +22,193 @@
 ---
 
 ## Overview
-OmniBrief is a **high-signal discovery platform** that autonomously scans the global AI landscape (ArXiv, GitHub, RSS, Technical Blogs) to deliver a personalized, technical research briefing. Unlike simple aggregators, it uses a **stateful agentic graph** to "think," "rank," and "correlate" information based on your personal interest profile.
+OmniBrief is a **high-signal AI discovery and newsletter platform** built for engineers, researchers, and technical founders. It collects updates from ArXiv, GitHub, RSS feeds, Product Hunt, Hacker News, and Reddit, ranks them with an LLM-driven pipeline, synthesizes the day into a concise technical report, and sends the same daily digest to all active subscribers.
+
+Unlike a simple aggregator, OmniBrief combines:
+- **source aggregation** across research, code, launches, and community discussions
+- **LLM-based ranking and summarization** for technical relevance
+- **email subscription flows** with confirmation and unsubscribe support
+- **persistent delivery and deduplication state** in PostgreSQL
 
 ## The "Why"
-In the hyper-accelerated world of Artificial Intelligence, the "half-life" of knowledge is measured in days. Manually scouring ArXiv, GitHub, Reddit, and technical blogs every morning to find the signal in the noise has become a full-time job. 
+AI is moving too fast for manual tracking. Important papers, repos, product launches, and implementation ideas are scattered across dozens of feeds every day, and most of that stream is repetitive, shallow, or late.
 
-I built **OmniBrief** to automate the research lifecycle. It acts as an autonomous technical analyst that:
-- **Keeps up with the global pace:** Scans 30+ sources, from elite labs to underdog innovators.
-- **Understands the signal:** Uses AI to read full-text articles and code, not just headlines.
-- **Tailored to you:** Prioritizes specific frameworks and architectures defined in your personal profile.
-- **Delivers value daily:** Sends a high-density report every morning at a specified time, ensuring you never miss a breakthrough while you sleep.
+OmniBrief was built to compress that chaos into one calm daily read. It acts as a technical signal layer that:
+- **Keeps up with the global pace:** Tracks research, tooling, launches, and community signals in one pipeline.
+- **Understands the signal:** Uses AI to rank, summarize, and synthesize technical developments instead of forwarding raw links.
+- **Removes friction for readers:** Users subscribe with an email, confirm once, and then receive the briefing automatically every day.
+- **Stays production-oriented:** Uses a dedicated API, a scheduled worker, and PostgreSQL-backed persistence for subscriber and delivery state.
 
 ---
 
 ## System Architecture
-The engine operates as a cyclical intelligence pipeline orchestrated by **LangGraph**.
+OmniBrief operates as a small production system with a public frontend, a subscription API, and a scheduled digest worker.
 
 ```mermaid
 graph TD
-    %% Input Layer
-    subgraph "1. Data Acquisition (Wide Net)"
-        Fetch[Parallel Fetchers] -->|httpx| RSS[30+ Tech Blogs]
-        Fetch -->|Atom API| ArXiv[Elite Research]
-        Fetch -->|Search API| GH[GitHub Trending & Innovation]
-        Fetch -->|Scraper| PH[ProductHunt & Signals]
+    %% User Layer
+    subgraph "1. Reader Experience"
+        User[Subscriber]
+        FE[Next.js Frontend]
+        API[FastAPI Subscription API]
+        User --> FE
+        FE -->|POST /subscribe| API
+        API -->|Confirm / Unsubscribe Links| User
+    end
+
+    %% Newsletter Layer
+    subgraph "2. Subscription & Persistence"
+        PG[(PostgreSQL / Neon)]
+        API -->|Subscribers, Tokens| PG
+        Worker[Daily Digest Worker]
+        Worker -->|Delivery Logs, Sent History| PG
     end
 
     %% Intelligence Layer
-    subgraph "2. Agentic Intelligence Graph (The Brain)"
-        RSS & ArXiv & GH & PH --> Filter[Persistent Memory Filter]
-        Filter -->|SQLite| Dedup[Fuzzy Deduplicator]
-        Dedup -->|Cross-Source| Corel[Contextual Correlator]
-        Corel -->|Link Paper to Code| Rank[AI Ranking Node]
-        Rank -->|PROFILE.md| Scoring[Personalized Scoring]
+    subgraph "3. Data Acquisition & Intelligence"
+        HN[Hacker News]
+        RSS[RSS / Blogs]
+        ArXiv[ArXiv]
+        GH[GitHub]
+        PH[Product Hunt]
+        Reddit[Reddit]
+        HN --> Worker
+        RSS --> Worker
+        ArXiv --> Worker
+        GH --> Worker
+        PH --> Worker
+        Reddit --> Worker
+        Worker --> Curate[Dedup + Correlation]
+        Curate --> Rank[LLM Ranking]
+        Rank --> Summarize[LLM Summaries]
+        Summarize --> Synthesize[Daily Technical Synthesis]
     end
 
-    %% Deep Dive Layer
-    subgraph "3. Cognitive Processing"
-        Scoring --> Scrape[Hybrid Smart Scraper]
-        Scrape -->|Playwright Fallback| Extract[Full-Text Extraction]
-        Extract --> Summary[Analyst-Critic Loop]
-        Summary -->|Self-Correction| Synthesis[Daily Strategic Synthesis]
+    %% Delivery Layer
+    subgraph "4. Delivery"
+        Render[HTML Email Renderer]
+        Resend[Resend API]
+        Inbox[Subscriber Inbox]
+        Synthesize --> Render
+        Render --> Resend
+        Resend --> Inbox
     end
-
-    %% Output Layer
-    subgraph "4. Delivery & Persistence"
-        Synthesis --> Render[Jinja2 Editorial Template]
-        Render -->|Resend API| Email[Premium Substack Inbox]
-        Email -->|Commit| History[SQLite & GitHub Cache]
-    end
-
-    %% Styling
-    style Synthesis fill:#f96,stroke:#333,stroke-width:2px
-    style Scoring fill:#6366f1,stroke:#fff,color:#fff
-    style Corel fill:#10b981,stroke:#fff,color:#fff
 ```
 
 ## Key Features
-- **Agentic Workflow:** Built with LangGraph for stateful, recoverable, and iterative processing.
-- **Authority-Based Scouting:** Explicitly monitors elite labs (DeepSeek, HKUST, Microsoft, OpenAI) for underdog releases.
-- **Full-Text Analysis:** Bypasses "headline-only" summaries by using **Playwright** to scrape and read the actual technical articles.
-- **Cross-Source Correlation:** Automatically identifies when a new ArXiv paper has an official GitHub implementation and links them.
-- **Personalized Ranking:** Uses your `PROFILE.md` to score and prioritize content matching your specific tech stack and interests.
-- **Cost Auditing:** Built-in private token tracking to monitor OpenAI API budget.
+- **Multi-source AI scouting:** Pulls from ArXiv, GitHub, RSS feeds, Product Hunt, Hacker News, and Reddit.
+- **LangGraph-based intelligence pipeline:** Curates, ranks, summarizes, critiques, and synthesizes the most relevant items.
+- **Technical email digest:** Sends one clean daily report instead of a stream of raw links.
+- **Public subscription workflow:** Includes subscribe, email confirmation, and unsubscribe flows through FastAPI.
+- **PostgreSQL-backed persistence:** Stores subscribers, tokens, sent-item history, and delivery logs in Neon/PostgreSQL.
+- **Frontend + API split:** Uses a Next.js landing page and a backend API that can be deployed independently.
+- **Docker-ready deployment:** Runs cleanly on EC2 with Docker Compose for both API and worker flows.
 
 ## Setup
-1. **Clone & Install:**
-   ```bash
-   pip install -r requirements.txt
-   playwright install chromium
-   ```
-2. **Configure Profile:**
-   Edit `PROFILE.md` to describe your technical interests in natural language.
-3. **Set Environment:**
-   Copy `.env.example` to `.env` and add your `OPENAI_API_KEY`, `RESEND_API_KEY`, and `GITHUB_TOKEN`.
-4. **Run:**
-   ```bash
-   python main.py
-   ```
+You can run OmniBrief locally with the backend, worker, and frontend separated.
+
+### 1. Clone the project
+```bash
+git clone https://github.com/tanishra/OmniBrief.git
+cd OmniBrief
+```
+
+### 2. Create environment files
+Create a backend `.env` from the example:
+
+```bash
+cp .env.example .env
+```
+
+Important values to set in `.env`:
+- `OPENAI_API_KEY`
+- `RESEND_API_KEY`
+- `DATABASE_URL`
+- `APP_BASE_URL`
+- `NEWSLETTER_TOKEN_SECRET`
+- `ADMIN_EMAIL`
+- `SENDER_EMAIL`
+- `SENDER_NAME`
+
+For local testing, `APP_BASE_URL` can be:
+
+```env
+APP_BASE_URL=http://localhost:8000
+```
+
+If you are running the frontend locally, include:
+
+```env
+FRONTEND_ORIGINS=http://localhost:3000
+```
+
+### 3. Install backend dependencies
+```bash
+pip install -r requirements.txt
+playwright install chromium
+```
+
+### 4. Run the subscription API
+```bash
+uvicorn app:app --reload
+```
+
+The API will be available at:
+
+```bash
+http://localhost:8000
+```
+
+### 5. Run the daily worker manually
+In a new terminal:
+
+```bash
+python main.py
+```
+
+This runs the full digest pipeline and sends the newsletter to active subscribers.
+
+### 6. Run the frontend
+In another terminal:
+
+```bash
+cd frontend
+npm install
+```
+
+Create a local frontend env file:
+
+```bash
+cp .env.example .env.local
+```
+
+Then set:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+```
+
+Start the frontend:
+
+```bash
+npm run dev
+```
+
+The landing page will be available at:
+
+```bash
+http://localhost:3000
+```
+
+### 7. Local test flow
+Once everything is running:
+- open the frontend
+- submit an email
+- confirm the subscription from your inbox
+- run `python main.py`
+- verify delivery logs and sent history in PostgreSQL
+
+---
+
+## Contributing
+Contributions are welcome. For larger changes, open an issue first so the direction stays aligned with the product and deployment model.
