@@ -1,0 +1,25 @@
+services:
+  omnibrief-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: omnibrief:latest
+    container_name: omnibrief-api
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    command: uvicorn app:app --host 0.0.0.0 --port 8000
+
+  omnibrief-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: omnibrief:latest
+    container_name: omnibrief-worker
+    env_file:
+      - .env
+    profiles:
+      - worker
+    command: python main.py
