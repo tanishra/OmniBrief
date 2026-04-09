@@ -24,6 +24,16 @@ input {
   @apply transition-all duration-200;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 ::selection {
   background: rgba(39, 85, 111, 0.16);
 }
