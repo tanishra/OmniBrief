@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "https://omni.tanish.website";
 
 export default function SubscribeForm({ compact = false, dark = false }) {
+  const inputId = useId();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("idle");
   const [message, setMessage] = useState("");
@@ -47,18 +48,40 @@ export default function SubscribeForm({ compact = false, dark = false }) {
     : "text-ink placeholder:text-slate/70";
 
   const buttonClass = dark
-    ? "bg-paper text-ink hover:bg-white"
-    : "bg-ink text-white hover:bg-[#262626]";
+    ? "bg-paper text-ink hover:-translate-y-0.5 hover:bg-white hover:shadow-lg"
+    : "bg-ink text-white hover:-translate-y-0.5 hover:bg-[#262626] hover:shadow-lg";
+
+  const feedbackClass =
+    status === "success"
+      ? dark
+        ? "border border-emerald-300/25 bg-emerald-300/10 text-emerald-100"
+        : "border border-emerald-200 bg-emerald-50 text-emerald-900"
+      : status === "error"
+        ? dark
+          ? "border border-red-300/25 bg-red-300/10 text-red-100"
+          : "border border-red-200 bg-red-50 text-red-900"
+        : dark
+          ? "text-white/70"
+          : "text-slate";
 
   return (
     <div className="w-full">
+      <label
+        htmlFor={inputId}
+        className={`mb-3 block text-xs font-semibold uppercase tracking-[0.18em] ${
+          dark ? "text-white/60" : "text-slate"
+        }`}
+      >
+        Subscribe in under 10 seconds
+      </label>
       <form
         onSubmit={onSubmit}
         className={`flex w-full flex-col gap-3 rounded-2xl p-2 sm:flex-row ${wrapperClass} ${
           compact ? "max-w-md" : "max-w-xl"
-        }`}
+        } transition duration-300 hover:-translate-y-0.5 hover:shadow-editorial`}
       >
         <input
+          id={inputId}
           type="email"
           required
           value={email}
@@ -74,14 +97,20 @@ export default function SubscribeForm({ compact = false, dark = false }) {
           {status === "loading" ? "Submitting..." : "Subscribe"}
         </button>
       </form>
-      <p
-        className={`mt-3 text-sm ${
-          dark ? "text-white/70" : "text-slate"
-        }`}
+      <div
+        className={`mt-4 rounded-2xl px-4 py-3 text-sm leading-7 transition-all duration-300 ${feedbackClass}`}
       >
-        {message ||
-          "Enter your email, verify once, and receive OmniBrief daily."}
-      </p>
+        {status === "success" ? (
+          <div className="space-y-1">
+            <p className="font-semibold">Check your inbox to confirm your subscription.</p>
+            <p>{message}</p>
+          </div>
+        ) : status === "error" ? (
+          <p>{message}</p>
+        ) : (
+          <p>Enter your email, verify once, and receive OmniBrief daily.</p>
+        )}
+      </div>
     </div>
   );
 }
