@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(39, 85, 111, 0.08), transparent 32%),
+    radial-gradient(circle at bottom right, rgba(155, 94, 47, 0.08), transparent 28%),
+    #f6f3ef;
+}
+
+a,
+button,
+input {
+  @apply transition-all duration-200;
+}
+
+::selection {
+  background: rgba(39, 85, 111, 0.16);
+}
