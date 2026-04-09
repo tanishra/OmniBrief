@@ -8,9 +8,11 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, EmailStr
 
+from config import FRONTEND_ORIGINS
 from src.mailer import send_confirmation_email
 from src.persistence import (
     confirm_subscriber,
@@ -28,6 +30,13 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="OmniBrief API", version="1.0.0", lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=FRONTEND_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 
 class SubscribeRequest(BaseModel):
