@@ -45,10 +45,20 @@ export default function HomePage() {
             </a>
           </nav>
           <a
-            href="#subscribe"
-            className="rounded-full border border-ink/10 bg-ink px-5 py-2 text-sm font-medium text-white hover:bg-[#262626]"
+            href="https://github.com/tanishra/OmniBrief"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="View OmniBrief on GitHub"
+            className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-black px-4 py-2 text-sm font-medium text-white hover:-translate-y-0.5 hover:bg-[#1f1f1f] hover:shadow-lg"
           >
-            Subscribe
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="h-4 w-4 fill-current"
+            >
+              <path d="M12 1.5C6.201 1.5 1.5 6.358 1.5 12.352c0 4.795 3.006 8.863 7.177 10.298.525.101.718-.234.718-.521 0-.257-.009-.938-.014-1.84-2.919.652-3.534-1.454-3.534-1.454-.477-1.255-1.165-1.589-1.165-1.589-.953-.67.072-.656.072-.656 1.054.076 1.608 1.118 1.608 1.118.937 1.664 2.458 1.183 3.057.905.095-.699.366-1.183.666-1.455-2.33-.272-4.779-1.206-4.779-5.37 0-1.187.41-2.158 1.082-2.919-.109-.273-.469-1.372.103-2.858 0 0 .882-.292 2.891 1.115A9.793 9.793 0 0 1 12 7.32a9.79 9.79 0 0 1 2.633.366c2.007-1.407 2.887-1.115 2.887-1.115.574 1.486.214 2.585.105 2.858.674.761 1.081 1.732 1.081 2.919 0 4.175-2.453 5.095-4.79 5.362.376.334.712.992.712 2 0 1.444-.013 2.609-.013 2.965 0 .289.189.627.723.52 4.167-1.437 7.169-5.503 7.169-10.296C22.5 6.358 17.799 1.5 12 1.5Z" />
+            </svg>
+            GitHub
           </a>
         </div>
       </header>
@@ -79,7 +89,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-mist/80 bg-white/75 p-7 shadow-editorial">
+          <div className="rounded-[2rem] border border-mist/80 bg-white/75 p-7 shadow-editorial transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_80px_rgba(23,23,23,0.12)]">
             <div className="flex items-center justify-between border-b border-mist pb-4">
               <span className="font-heading text-lg font-bold">Today&apos;s Brief</span>
               <span className="rounded-full bg-accentSoft px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-accent">
@@ -98,7 +108,7 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="grid gap-4 border-t border-mist pt-5">
-                <div className="rounded-2xl bg-paper p-4">
+                <div className="rounded-2xl bg-paper p-4 transition duration-300 hover:-translate-y-1 hover:bg-white">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate">
                     Research
                   </p>
@@ -106,7 +116,7 @@ export default function HomePage() {
                     Frontier paper with linked implementation
                   </p>
                 </div>
-                <div className="rounded-2xl bg-paper p-4">
+                <div className="rounded-2xl bg-paper p-4 transition duration-300 hover:-translate-y-1 hover:bg-white">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate">
                     GitHub
                   </p>
@@ -114,7 +124,7 @@ export default function HomePage() {
                     High-velocity Python repo with real technical leverage
                   </p>
                 </div>
-                <div className="rounded-2xl bg-paper p-4">
+                <div className="rounded-2xl bg-paper p-4 transition duration-300 hover:-translate-y-1 hover:bg-white">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate">
                     Signal
                   </p>
@@ -169,7 +179,7 @@ export default function HomePage() {
               ].map((item) => (
                 <div
                   key={item}
-                  className="flex items-start gap-3 rounded-2xl border border-mist bg-white/70 p-4"
+                  className="flex items-start gap-3 rounded-2xl border border-mist bg-white/70 p-4 transition duration-300 hover:-translate-y-0.5 hover:bg-white"
                 >
                   <span className="mt-1 h-2.5 w-2.5 rounded-full bg-copper" />
                   <p className="text-sm leading-7 text-slate">{item}</p>
@@ -214,7 +224,7 @@ export default function HomePage() {
           ].map((item) => (
             <article
               key={item.step}
-              className="rounded-[1.75rem] border border-mist bg-white/70 p-8 shadow-editorial"
+              className="rounded-[1.75rem] border border-mist bg-white/70 p-8 shadow-editorial transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_64px_rgba(23,23,23,0.12)]"
             >
               <span className="text-xs font-semibold uppercase tracking-[0.24em] text-copper">
                 Step {item.step}
@@ -249,7 +259,7 @@ export default function HomePage() {
             {audience.map((item) => (
               <article
                 key={item.label}
-                className="rounded-[1.75rem] border border-white/60 bg-white/65 p-8"
+                className="rounded-[1.75rem] border border-white/60 bg-white/65 p-8 transition duration-300 hover:-translate-y-1 hover:bg-white/85 hover:shadow-editorial"
               >
                 <p className="text-xs uppercase tracking-[0.18em] text-slate">
                   Audience
@@ -282,7 +292,7 @@ export default function HomePage() {
               {deliverables.map((item) => (
                 <div
                   key={item}
-                  className="rounded-2xl border border-mist bg-white/65 px-5 py-4 text-sm leading-7 text-slate"
+                  className="rounded-2xl border border-mist bg-white/65 px-5 py-4 text-sm leading-7 text-slate transition duration-300 hover:-translate-y-0.5 hover:bg-white"
                 >
                   {item}
                 </div>
@@ -290,7 +300,10 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="rounded-[2rem] bg-ink px-8 py-10 text-white shadow-editorial sm:px-12 sm:py-14">
+          <div
+            id="final-cta"
+            className="rounded-[2rem] bg-ink px-8 py-10 text-white shadow-editorial transition duration-300 hover:-translate-y-1 hover:shadow-[0_32px_90px_rgba(23,23,23,0.18)] sm:px-12 sm:py-14"
+          >
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
               Final invitation
             </p>
