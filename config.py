@@ -32,6 +32,14 @@ SUBSCRIBE_TOKEN_TTL_HOURS   = int(os.getenv("SUBSCRIBE_TOKEN_TTL_HOURS", "48"))
 UNSUBSCRIBE_TOKEN_TTL_DAYS  = int(os.getenv("UNSUBSCRIBE_TOKEN_TTL_DAYS", "30"))
 MAX_BROADCAST_CONCURRENCY   = int(os.getenv("MAX_BROADCAST_CONCURRENCY", "5"))
 BOOTSTRAP_RECIPIENT_AS_SUBSCRIBER = os.getenv("BOOTSTRAP_RECIPIENT_AS_SUBSCRIBER", "true").lower() == "true"
+FRONTEND_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "FRONTEND_ORIGINS",
+        "",
+    ).split(",")
+    if origin.strip()
+]
 
 # ── Fetch Limits ──────────────────────────────────────────────────────────────
 HN_MAX_ITEMS          = 10
