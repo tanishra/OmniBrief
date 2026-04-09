@@ -181,6 +181,22 @@ def cleanup_history(days: int = 14) -> None:
         conn.commit()
 
 
+def cleanup_tokens(retention_days: int = 7) -> None:
+    """Removes expired or used tokens after a short retention period."""
+    cutoff = _utcnow() - timedelta(days=retention_days)
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                DELETE FROM subscriber_tokens
+                WHERE (used_at IS NOT NULL AND used_at < %s)
+                   OR (expires_at < %s)
+                """,
+                (cutoff, cutoff),
+            )
+        conn.commit()
+
+
 def ensure_default_subscriber() -> None:
     """Bootstraps the legacy recipient as an active subscriber for backwards compatibility."""
     if not BOOTSTRAP_RECIPIENT_AS_SUBSCRIBER or not RECIPIENT_EMAIL:

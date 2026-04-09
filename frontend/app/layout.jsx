@@ -12,7 +12,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata = {
-  title: "OmniBrief | AI Research Briefing",
+  title: "OmniBrief",
   description:
     "A premium daily AI briefing for engineers, researchers, and technical founders. Subscribe once, verify your email, and receive high-signal technical intelligence every morning.",
 };

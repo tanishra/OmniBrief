@@ -30,6 +30,7 @@ from src.renderer                 import render_digest
 from src.mailer                   import send_digest
 from src.persistence              import (
     cleanup_history,
+    cleanup_tokens,
     create_unsubscribe_link,
     ensure_default_subscriber,
     init_db,
@@ -98,6 +99,7 @@ async def run() -> None:
     # ── Step 1: Init ──────────────────────────────────────────
     validate_config()
     init_db()
+    cleanup_tokens()
     ensure_default_subscriber()
     history = load_history()
 
