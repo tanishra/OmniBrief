@@ -1,18 +1,22 @@
 """
 src/fetchers/reddit.py
 Fetches top AI posts from Reddit using the public JSON API.
-No API key needed — Reddit exposes .json endpoints publicly.
+Uses endpoint fallbacks because Reddit may block one hostname while allowing another.
 """
 
 import httpx
 import asyncio
 from typing import List, Dict, Any
 
-REDDIT_JSON = "https://www.reddit.com/r/{subreddit}/top.json"
+REDDIT_JSON_ENDPOINTS = [
+    "https://www.reddit.com/r/{subreddit}/top.json",
+    "https://old.reddit.com/r/{subreddit}/top.json",
+]
 
 HEADERS = {
-    # Reddit requires a User-Agent — using a generic one avoids 429s
-    "User-Agent": "AIDigest/1.0 (personal digest bot; contact@example.com)",
+    # Reddit is stricter on VPS/cloud IPs, so use a descriptive UA and explicit JSON accept header.
+    "User-Agent": "linux:omnibrief:v1.0 (by /u/omnibrief)",
+    "Accept": "application/json",
 }
 
 # Keywords to filter for relevance in mixed subreddits
@@ -41,16 +45,9 @@ async def fetch_reddit(
     async with httpx.AsyncClient(timeout=20, headers=HEADERS, follow_redirects=True) as client:
         for subreddit in subreddits:
             try:
-                params = {
-                    "limit": 20,
-                    "t":     time_filter,
-                }
-                url  = REDDIT_JSON.format(subreddit=subreddit)
-                resp = await client.get(url, params=params)
-                resp.raise_for_status()
-                data = resp.json()
-
-                posts = data.get("data", {}).get("children", [])
+                posts = await _fetch_subreddit_posts(client, subreddit, time_filter)
+                if not posts:
+                    continue
 
                 for post in posts:
                     p = post.get("data", {})
@@ -61,19 +58,16 @@ async def fetch_reddit(
                     score      = p.get("score", 0)
                     comments   = p.get("num_comments", 0)
                     selftext   = p.get("selftext", "")[:300]
-                    is_self    = p.get("is_self", False)   # text post vs link post
+                    is_self    = p.get("is_self", False)
 
                     if not title or link in seen_urls:
                         continue
 
-                    # For r/MachineLearning and r/LocalLLaMA — all posts are relevant
-                    # For broader subs — filter by keyword
                     if subreddit not in ("MachineLearning", "LocalLLaMA"):
                         title_lower = title.lower()
                         if not any(kw in title_lower for kw in AI_KEYWORDS):
                             continue
 
-                    # Skip low-engagement posts
                     if score < 50:
                         continue
 
@@ -90,7 +84,7 @@ async def fetch_reddit(
                     })
 
             except (httpx.HTTPStatusError, httpx.RequestError) as e:
-                print(f"  ⚠️  Reddit r/{subreddit} fetch failed: {e}")
+                print(f"  ⚠️  Reddit r/{subreddit} fetch failed after fallbacks: {e}")
                 continue
 
             await asyncio.sleep(0.5)   # Be polite to Reddit
@@ -98,6 +92,34 @@ async def fetch_reddit(
     # Sort by score, take top N
     all_posts.sort(key=lambda x: x["score"], reverse=True)
     return all_posts[:max_items]
+
+
+async def _fetch_subreddit_posts(
+    client: httpx.AsyncClient,
+    subreddit: str,
+    time_filter: str,
+) -> List[Dict[str, Any]]:
+    params = {
+        "limit": 20,
+        "t": time_filter,
+        "raw_json": 1,
+    }
+
+    last_error: Exception | None = None
+    for endpoint in REDDIT_JSON_ENDPOINTS:
+        url = endpoint.format(subreddit=subreddit)
+        try:
+            resp = await client.get(url, params=params)
+            resp.raise_for_status()
+            data = resp.json()
+            return data.get("data", {}).get("children", [])
+        except (httpx.HTTPStatusError, httpx.RequestError) as exc:
+            last_error = exc
+            continue
+
+    if last_error:
+        raise last_error
+    return []
 
 
 if __name__ == "__main__":
