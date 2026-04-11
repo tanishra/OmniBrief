@@ -330,10 +330,7 @@ export default function HomePage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-6 text-sm text-slate">
-            <a href="https://omni.tanish.website/healthz" target="_blank" rel="noreferrer" className="hover:text-ink">
-              API health
-            </a>
-            <a href="mailto:hello@tanish.website" className="hover:text-ink">
+            <a href="mailto:tanishrajput9@gmail.com" className="hover:text-ink">
               Contact
             </a>
           </div>
