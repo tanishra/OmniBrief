@@ -53,7 +53,7 @@ export default function ContactModal() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="text-sm text-slate hover:text-ink transition-colors"
+        className="inline-flex rounded-full bg-ink px-5 py-2 text-sm font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-[#262626] hover:shadow-lg"
       >
         Contact
       </button>
