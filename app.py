@@ -47,11 +47,18 @@ class SubscribeRequest(BaseModel):
     email: EmailStr
 
 
+class ContactRequest(BaseModel):
+    name: str
+    email: EmailStr
+    message: str
+
+
 RATE_LIMITS = {
     "subscribe_ip": (5, 600),
     "subscribe_email": (3, 3600),
     "confirm_ip": (20, 600),
     "unsubscribe_ip": (20, 600),
+    "contact_ip": (3, 3600),
 }
 _rate_buckets = defaultdict(deque)
 
@@ -142,6 +149,53 @@ async def subscribe(payload: SubscribeRequest, request: Request) -> dict:
     return {
         "message": "If this address can receive OmniBrief, a confirmation email has been sent."
     }
+
+
+@app.post("/contact")
+async def contact(payload: ContactRequest, request: Request) -> dict:
+    client_ip = _get_client_ip(request)
+    _enforce_rate_limit("contact_ip", client_ip)
+
+    from config import ADMIN_EMAIL
+    from src.mailer import _send_email
+
+    html = f"""
+    <div style="font-family:Helvetica,Arial,sans-serif;background:#f8fafc;padding:48px 20px;color:#0f172a;">
+        <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:40px;shadow:0 4px 6px -1px rgb(0 0 0 / 0.1);">
+            <div style="border-bottom:2px solid #f1f5f9;padding-bottom:24px;margin-bottom:32px;">
+                <div style="font-size:24px;font-weight:800;letter-spacing:-0.02em;color:#0f172a;">OmniBrief.</div>
+                <div style="font-size:14px;color:#64748b;margin-top:4px;">Inquiry from Direct Contact Form</div>
+            </div>
+            
+            <div style="margin-bottom:32px;">
+                <label style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;tracking:0.1em;color:#94a3b8;margin-bottom:8px;">Sender Details</label>
+                <div style="font-size:16px;color:#0f172a;background:#f8fafc;padding:16px;border-radius:12px;border:1px solid #f1f5f9;">
+                    <strong>{payload.name}</strong><br/>
+                    <a href="mailto:{payload.email}" style="color:#3b82f6;text-decoration:none;">{payload.email}</a>
+                </div>
+            </div>
+            
+            <div>
+                <label style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;tracking:0.1em;color:#94a3b8;margin-bottom:8px;">Message Content</label>
+                <div style="font-size:16px;line-height:1.6;color:#334155;background:#f8fafc;padding:20px;border-radius:12px;border:1px solid #f1f5f9;white-space:pre-wrap;">{payload.message}</div>
+            </div>
+            
+            <div style="margin-top:40px;padding-top:24px;border-top:1px solid #f1f5f9;font-size:12px;color:#94a3b8;text-align:center;">
+                This message was sent from the OmniBrief landing page contact form.
+            </div>
+        </div>
+    </div>
+    """
+
+    try:
+        await _send_email(
+            to_email=ADMIN_EMAIL,
+            subject=f"Inquiry: {payload.name} via OmniBrief",
+            html_content=html,
+        )
+        return {"message": "Message sent successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to send message.")
 
 
 @app.get("/confirm", response_class=HTMLResponse)
