@@ -1,4 +1,5 @@
 import SubscribeForm from "../components/subscribe-form";
+import ContactModal from "../components/contact-modal";
 
 const audience = [
   {
@@ -330,9 +331,7 @@ export default function HomePage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-6 text-sm text-slate">
-            <a href="mailto:tanishrajput9@gmail.com" className="hover:text-ink">
-              Contact
-            </a>
+            <ContactModal />
           </div>
         </div>
       </footer>
