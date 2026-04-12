@@ -1,20 +1,65 @@
 """
 src/scraper.py
 V5 Engine: Hybrid Scraping (BeautifulSoup primary, Playwright fallback).
+V5.1: SSRF Protection.
 """
 
+import socket
+import ipaddress
+from urllib.parse import urlparse
 import httpx
 from bs4 import BeautifulSoup
 import asyncio
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from playwright.async_api import async_playwright
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
 
+def _is_safe_url(url: str) -> bool:
+    """Checks if a URL is safe for server-side fetching (prevents SSRF)."""
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return False
+        
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+
+        # 1. Block literal IP addresses if they are private
+        try:
+            ip = ipaddress.ip_address(hostname)
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_unspecified:
+                return False
+        except ValueError:
+            # Not an IP literal, continue to DNS resolution
+            pass
+
+        # 2. Resolve hostname and block private IPs (Basic DNS check)
+        # Note: This doesn't fully prevent DNS rebinding but blocks direct internal access.
+        try:
+            addr_info = socket.getaddrinfo(hostname, None)
+            for family, _, _, _, sockaddr in addr_info:
+                ip_str = sockaddr[0]
+                ip = ipaddress.ip_address(ip_str)
+                if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_unspecified:
+                    return False
+        except socket.gaierror:
+            # DNS failure, URL likely invalid anyway
+            return False
+
+        return True
+    except Exception:
+        return False
+
 async def _scrape_playwright(url: str) -> Dict[str, Any]:
     """Headless browser fallback for heavy JS sites."""
+    if not _is_safe_url(url):
+        print(f"    🚫 SSRF Blocked (Playwright): {url[:50]}...")
+        return {}
+        
     try:
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
@@ -41,6 +86,10 @@ async def _scrape_playwright(url: str) -> Dict[str, Any]:
 
 async def fetch_metadata(url: str) -> Dict[str, Any]:
     """Primary: fast HTTPX. Fallback: Playwright."""
+    if not _is_safe_url(url):
+        print(f"    🚫 SSRF Blocked (HTTPX): {url[:50]}...")
+        return {}
+
     try:
         async with httpx.AsyncClient(timeout=10, follow_redirects=True, headers=HEADERS) as client:
             resp = await client.get(url)
