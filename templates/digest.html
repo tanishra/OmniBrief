@@ -2,186 +2,170 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OmniBrief — {{ date }}</title>
-  <style>
-    /* ─── Base Styles ─── */
-    body { background: #fdfdfc; color: #1a1a1a; font-family: 'Georgia', serif; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
-    a { color: inherit; text-decoration: none; }
-    .wrapper { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-
-    /* ─── Header ─── */
-    .header { border-bottom: 2px solid #1a1a1a; padding-bottom: 20px; margin-bottom: 40px; }
-    .header-logo { font-size: 32px; font-weight: 900; font-family: 'Helvetica', 'Arial', sans-serif; letter-spacing: -1px; color: #000; }
-    .header-sub { font-size: 14px; color: #666; margin-top: 10px; font-family: 'Helvetica', 'Arial', sans-serif; text-transform: uppercase; letter-spacing: 1px; }
-
-    /* ─── Stats ─── */
-    .stats-row { font-family: 'Helvetica', sans-serif; font-size: 12px; color: #888; margin-bottom: 40px; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-
-    /* V5 Synthesis Box */
-    .synthesis-box { background: #fdf2f2; border-left: 4px solid #ff4500; padding: 25px; margin-bottom: 50px; border-radius: 0 8px 8px 0; }
-    .synthesis-label { font-family: 'Helvetica', sans-serif; font-size: 11px; text-transform: uppercase; color: #ff4500; font-weight: 900; letter-spacing: 2px; display: block; margin-bottom: 15px; }
-    .synthesis-content { font-size: 18px; line-height: 1.6; color: #1a1a1a; font-style: italic; }
-
-    /* ─── Article / Entry ─── */
-    .article { margin-bottom: 50px; position: relative; overflow: hidden; }
-    .section-label { font-family: 'Helvetica', sans-serif; font-weight: bold; font-size: 11px; text-transform: uppercase; color: #ff4500; margin-bottom: 15px; display: block; letter-spacing: 1.5px; }
-    
-    .article-title { font-size: 24px; font-weight: bold; line-height: 1.2; margin-bottom: 12px; color: #000; font-family: 'Georgia', serif; }
-    .article-title a:hover { text-decoration: underline; }
-    
-    .article-content { font-size: 17px; line-height: 1.6; color: #333; margin-bottom: 15px; }
-    
-    .article-meta { font-family: 'Helvetica', sans-serif; font-size: 12px; color: #888; margin-top: 12px; display: flex; align-items: center; gap: 10px; }
-    
-    /* V4 Correlation Box */
-    .implementation-box { background: #f8f9fa; border: 1px dashed #10b981; padding: 15px; border-radius: 6px; margin-top: 15px; }
-    .impl-label { font-family: 'Helvetica', sans-serif; font-size: 10px; text-transform: uppercase; color: #10b981; font-weight: bold; display: block; margin-bottom: 5px; }
-    .impl-title { font-size: 14px; font-weight: bold; color: #059669; }
-
-    /* Image Support */
-    .thumbnail { float: right; width: 130px; height: 130px; background: #f0f0f0; margin-left: 20px; border-radius: 4px; object-fit: cover; border: 1px solid #eee; }
-    
-    /* ─── Footer ─── */
-    .footer { border-top: 1px solid #eee; padding-top: 30px; margin-top: 60px; font-family: 'Helvetica', sans-serif; font-size: 12px; color: #999; text-align: center; line-height: 1.8; }
-
-    /* Mobile Responsive */
-    @media (max-width: 600px) {
-      .wrapper { padding: 20px 15px; }
-      .thumbnail { width: 100px; height: 100px; }
-      .article-title { font-size: 20px; }
-    }
-  </style>
 </head>
-<body>
-  <div class="wrapper">
-    
-    <!-- HEADER -->
-    <div class="header">
-      <div class="header-logo">OmniBrief.</div>
-      <div class="header-sub">{{ date }}</div>
-    </div>
+<body style="margin:0;padding:0;background:#fdfdfc;color:#1a1a1a;font-family:Georgia,serif;-webkit-font-smoothing:antialiased;">
+  <div style="width:100%;background:#fdfdfc;">
+    <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
 
-    <!-- QUICK STATS -->
-    <div class="stats-row">
-      DISPATCH: {{ stats.papers }} PAPERS • {{ stats.repos }} REPOS • {{ stats.news }} ANALYSIS • {{ stats.products }} PRODUCTS • {{ stats.reddit }} SIGNALS
-    </div>
-
-    <!-- V5 EXECUTIVE SYNTHESIS -->
-    {% if synthesis %}
-    <div class="synthesis-box">
-      <span class="synthesis-label">Daily Technical Synthesis</span>
-      <div class="synthesis-content">
-        {{ synthesis }}
+      <div style="border-bottom:2px solid #1a1a1a;padding-bottom:20px;margin-bottom:40px;">
+        <div style="font-size:32px;font-weight:900;font-family:Helvetica,Arial,sans-serif;letter-spacing:-1px;color:#000000;">
+          OmniBrief.
+        </div>
+        <div style="font-size:14px;color:#666666;margin-top:10px;font-family:Helvetica,Arial,sans-serif;text-transform:uppercase;letter-spacing:1px;">
+          {{ date }}
+        </div>
       </div>
-    </div>
-    {% endif %}
 
-    <!-- ══ RESEARCH PAPERS ══ -->
-    {% if arxiv_items %}
-      {% for item in arxiv_items %}
-      <div class="article">
-        <span class="section-label">Research Breakthrough</span>
-        <div class="article-title"><a href="{{ item.url }}">{{ item.title }}</a></div>
-        <div class="article-content">{{ item.ai_summary }}</div>
-        
-        {% if item.implemented_by %}
-        <div class="implementation-box">
-          <span class="impl-label">Official / Linked Implementation</span>
-          <div class="impl-title">
-            <a href="{{ item.implemented_by.url }}">📦 {{ item.implemented_by.name }} (⭐ {{ item.implemented_by.stars }})</a>
+      <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#888888;margin-bottom:40px;font-weight:bold;border-bottom:1px solid #eeeeee;padding-bottom:10px;">
+        DISPATCH: {{ stats.papers }} PAPERS • {{ stats.repos }} REPOS • {{ stats.news }} ANALYSIS • {{ stats.products }} PRODUCTS • {{ stats.reddit }} SIGNALS
+      </div>
+
+      {% if synthesis %}
+      <div style="background:#fdf2f2;border-left:4px solid #ff4500;padding:25px;margin-bottom:50px;border-radius:0 8px 8px 0;">
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;text-transform:uppercase;color:#ff4500;font-weight:900;letter-spacing:2px;margin-bottom:15px;">
+          Daily Technical Synthesis
+        </div>
+        <div style="font-size:18px;line-height:1.6;color:#1a1a1a;font-style:italic;">
+          {{ synthesis }}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if arxiv_items %}
+        {% for item in arxiv_items %}
+        <div style="margin-bottom:50px;overflow:hidden;">
+          <div style="font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:11px;text-transform:uppercase;color:#ff4500;margin-bottom:15px;letter-spacing:1.5px;">
+            Research Breakthrough
+          </div>
+          <div style="font-size:24px;font-weight:bold;line-height:1.2;margin-bottom:12px;color:#000000;font-family:Georgia,serif;">
+            <a href="{{ item.url }}" style="color:#000000;text-decoration:none;">{{ item.title }}</a>
+          </div>
+          <div style="font-size:17px;line-height:1.6;color:#333333;margin-bottom:15px;">
+            {{ item.ai_summary }}
+          </div>
+
+          {% if item.implemented_by %}
+          <div style="background:#f8f9fa;border:1px dashed #10b981;padding:15px;border-radius:6px;margin-top:15px;">
+            <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;text-transform:uppercase;color:#10b981;font-weight:bold;margin-bottom:5px;">
+              Official / Linked Implementation
+            </div>
+            <div style="font-size:14px;font-weight:bold;color:#059669;">
+              <a href="{{ item.implemented_by.url }}" style="color:#059669;text-decoration:none;">📦 {{ item.implemented_by.name }} (⭐ {{ item.implemented_by.stars }})</a>
+            </div>
+          </div>
+          {% endif %}
+
+          <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#888888;margin-top:12px;">
+            <strong>ArXiv</strong> • {{ item.categories|join(', ') }} • <a href="{{ item.url }}" style="color:#ff4500;text-decoration:none;">View Paper →</a>
           </div>
         </div>
-        {% endif %}
-
-        <div class="article-meta">
-          <strong>ArXiv</strong> • {{ item.categories|join(', ') }} • <a href="{{ item.url }}" style="color:#ff4500">View Paper →</a>
-        </div>
-      </div>
-      {% endfor %}
-    {% endif %}
-
-    <!-- ══ GITHUB REPOS ══ -->
-    {% if github_items %}
-      {% for item in github_items %}
-      <div class="article">
-        <span class="section-label">GitHub Spotlight</span>
-        {% if item.og_image %}<img src="{{ item.og_image }}" class="thumbnail" alt="repo">{% endif %}
-        <div class="article-title"><a href="{{ item.url }}">{{ item.name }}</a></div>
-        <div class="article-content">{{ item.ai_summary }}</div>
-        <div class="article-meta">
-          <strong>Code</strong> • ⭐ {{ "{:,}".format(item.stars) }} • {{ item.language }} • <a href="{{ item.url }}" style="color:#ff4500">View Source →</a>
-        </div>
-      </div>
-      {% endfor %}
-    {% endif %}
-
-    <!-- ══ PRODUCT HUNT ══ -->
-    {% if ph_items %}
-      {% for item in ph_items %}
-      <div class="article">
-        <span class="section-label">Product Hunt Launch</span>
-        <div class="article-title"><a href="{{ item.url }}">{{ item.title }}</a></div>
-        <div class="article-content">{{ item.ai_summary }}</div>
-        <div class="article-meta">
-          <strong>ProductHunt</strong>
-          {% if item.votes %} • ▲ {{ item.votes }}{% endif %}
-          • <a href="{{ item.url }}" style="color:#ff4500">View Launch →</a>
-        </div>
-      </div>
-      {% endfor %}
-    {% endif %}
-
-    <!-- ══ NEWS & ANALYSIS ══ -->
-    {% if news_items or hn_items %}
-      {% for item in news_items + hn_items %}
-      <div class="article">
-        <span class="section-label">{{ item.source }}</span>
-        {% if item.og_image %}<img src="{{ item.og_image }}" class="thumbnail" alt="news">{% endif %}
-        <div class="article-title"><a href="{{ item.url }}">{{ item.title }}</a></div>
-        <div class="article-content">{{ item.ai_summary }}</div>
-        <div class="article-meta">
-          <strong>Analysis</strong> • <a href="{{ item.url }}" style="color:#ff4500">Full Story →</a>
-          {% if item.hn_link %} • <a href="{{ item.hn_link }}">Discussion →</a>{% endif %}
-        </div>
-      </div>
-      {% endfor %}
-    {% endif %}
-
-    <!-- ══ COMMUNITY SIGNALS (REDDIT) ══ -->
-    {% if reddit_items %}
-      {% for item in reddit_items %}
-      <div class="article">
-        <span class="section-label">Community Signal / {{ item.subreddit }}</span>
-        <div class="article-title"><a href="{{ item.url }}">{{ item.title }}</a></div>
-        <div class="article-content">{{ item.ai_summary }}</div>
-        <div class="article-meta">
-          <strong>Reddit</strong> • ▲ {{ item.score }} • <a href="{{ item.url }}" style="color:#ff4500">Discussion →</a>
-        </div>
-      </div>
-      {% endfor %}
-    {% endif %}
-
-    <!-- FOOTER -->
-    <div class="footer">
-      <strong>OmniBrief.</strong><br>
-      A personal automated briefing on the future of autonomous systems.
-      <br>
-      Built by <strong>Tanish Rajput</strong> -
-      <a href="https://www.linkedin.com/in/tr26/" style="color:#ff4500;">LinkedIn</a>
-      |
-      <a href="https://github.com/tanishra" style="color:#ff4500;">GitHub</a>
-      {% if unsubscribe_url %}
-      <br><br>
-      <a href="{{ unsubscribe_url }}" style="display:inline-block;background:#111827;color:#ffffff;padding:10px 16px;border-radius:999px;text-decoration:none;font-weight:bold;">
-        Unsubscribe
-      </a>
-      <br>
-      <span style="display:block;margin-top:12px;">If the button does not work, use this link:</span>
-      <a href="{{ unsubscribe_url }}" style="color:#ff4500;word-break:break-all;">{{ unsubscribe_url }}</a>
+        {% endfor %}
       {% endif %}
-    </div>
 
+      {% if github_items %}
+        {% for item in github_items %}
+        <div style="margin-bottom:50px;overflow:hidden;">
+          <div style="font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:11px;text-transform:uppercase;color:#ff4500;margin-bottom:15px;letter-spacing:1.5px;">
+            GitHub Spotlight
+          </div>
+          {% if item.og_image %}
+          <img src="{{ item.og_image }}" alt="repo" width="130" height="130" style="float:right;width:130px;height:130px;background:#f0f0f0;margin-left:20px;border-radius:4px;object-fit:cover;border:1px solid #eeeeee;" />
+          {% endif %}
+          <div style="font-size:24px;font-weight:bold;line-height:1.2;margin-bottom:12px;color:#000000;font-family:Georgia,serif;">
+            <a href="{{ item.url }}" style="color:#000000;text-decoration:none;">{{ item.name }}</a>
+          </div>
+          <div style="font-size:17px;line-height:1.6;color:#333333;margin-bottom:15px;">
+            {{ item.ai_summary }}
+          </div>
+          <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#888888;margin-top:12px;">
+            <strong>Code</strong> • ⭐ {{ "{:,}".format(item.stars) }} • {{ item.language }} • <a href="{{ item.url }}" style="color:#ff4500;text-decoration:none;">View Source →</a>
+          </div>
+        </div>
+        {% endfor %}
+      {% endif %}
+
+      {% if ph_items %}
+        {% for item in ph_items %}
+        <div style="margin-bottom:50px;overflow:hidden;">
+          <div style="font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:11px;text-transform:uppercase;color:#ff4500;margin-bottom:15px;letter-spacing:1.5px;">
+            Product Hunt Launch
+          </div>
+          <div style="font-size:24px;font-weight:bold;line-height:1.2;margin-bottom:12px;color:#000000;font-family:Georgia,serif;">
+            <a href="{{ item.url }}" style="color:#000000;text-decoration:none;">{{ item.title }}</a>
+          </div>
+          <div style="font-size:17px;line-height:1.6;color:#333333;margin-bottom:15px;">
+            {{ item.ai_summary }}
+          </div>
+          <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#888888;margin-top:12px;">
+            <strong>ProductHunt</strong>{% if item.votes %} • ▲ {{ item.votes }}{% endif %} • <a href="{{ item.url }}" style="color:#ff4500;text-decoration:none;">View Launch →</a>
+          </div>
+        </div>
+        {% endfor %}
+      {% endif %}
+
+      {% if news_items or hn_items %}
+        {% for item in news_items + hn_items %}
+        <div style="margin-bottom:50px;overflow:hidden;">
+          <div style="font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:11px;text-transform:uppercase;color:#ff4500;margin-bottom:15px;letter-spacing:1.5px;">
+            {{ item.source }}
+          </div>
+          {% if item.og_image %}
+          <img src="{{ item.og_image }}" alt="news" width="130" height="130" style="float:right;width:130px;height:130px;background:#f0f0f0;margin-left:20px;border-radius:4px;object-fit:cover;border:1px solid #eeeeee;" />
+          {% endif %}
+          <div style="font-size:24px;font-weight:bold;line-height:1.2;margin-bottom:12px;color:#000000;font-family:Georgia,serif;">
+            <a href="{{ item.url }}" style="color:#000000;text-decoration:none;">{{ item.title }}</a>
+          </div>
+          <div style="font-size:17px;line-height:1.6;color:#333333;margin-bottom:15px;">
+            {{ item.ai_summary }}
+          </div>
+          <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#888888;margin-top:12px;">
+            <strong>Analysis</strong> • <a href="{{ item.url }}" style="color:#ff4500;text-decoration:none;">Full Story →</a>{% if item.hn_link %} • <a href="{{ item.hn_link }}" style="color:#ff4500;text-decoration:none;">Discussion →</a>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% endif %}
+
+      {% if reddit_items %}
+        {% for item in reddit_items %}
+        <div style="margin-bottom:50px;overflow:hidden;">
+          <div style="font-family:Helvetica,Arial,sans-serif;font-weight:bold;font-size:11px;text-transform:uppercase;color:#ff4500;margin-bottom:15px;letter-spacing:1.5px;">
+            Community Signal / {{ item.subreddit }}
+          </div>
+          <div style="font-size:24px;font-weight:bold;line-height:1.2;margin-bottom:12px;color:#000000;font-family:Georgia,serif;">
+            <a href="{{ item.url }}" style="color:#000000;text-decoration:none;">{{ item.title }}</a>
+          </div>
+          <div style="font-size:17px;line-height:1.6;color:#333333;margin-bottom:15px;">
+            {{ item.ai_summary }}
+          </div>
+          <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#888888;margin-top:12px;">
+            <strong>Reddit</strong> • ▲ {{ item.score }} • <a href="{{ item.url }}" style="color:#ff4500;text-decoration:none;">Discussion →</a>
+          </div>
+        </div>
+        {% endfor %}
+      {% endif %}
+
+      <div style="border-top:1px solid #eeeeee;padding-top:30px;margin-top:60px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#999999;text-align:center;line-height:1.8;">
+        <strong>OmniBrief.</strong><br />
+        A personal automated briefing on the future of autonomous systems.
+        <br />
+        Built by <strong>Tanish Rajput</strong> -
+        <a href="https://www.linkedin.com/in/tr26/" style="color:#ff4500;text-decoration:none;">LinkedIn</a>
+        |
+        <a href="https://github.com/tanishra" style="color:#ff4500;text-decoration:none;">GitHub</a>
+        {% if unsubscribe_url %}
+        <br /><br />
+        <a href="{{ unsubscribe_url }}" style="display:inline-block;background:#111827;color:#ffffff;padding:10px 16px;border-radius:999px;text-decoration:none;font-weight:bold;">
+          Unsubscribe
+        </a>
+        <br />
+        <span style="display:block;margin-top:12px;">If the button does not work, use this link:</span>
+        <a href="{{ unsubscribe_url }}" style="color:#ff4500;word-break:break-all;text-decoration:none;">{{ unsubscribe_url }}</a>
+        {% endif %}
+      </div>
+
+    </div>
   </div>
 </body>
 </html>

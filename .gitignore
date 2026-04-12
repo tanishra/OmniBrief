@@ -12,14 +12,10 @@ env/
 .venv/
 
 # Project Specific
-*.html
 sent_history.json
 *.db
 *.db-journal
 previews/
-templates/*
-!templates/
-!templates/digest.html
 .vscode
 .DS_Store
 *.pem
