@@ -5,6 +5,7 @@ FastAPI application for newsletter subscription management.
 
 from __future__ import annotations
 
+import html
 from contextlib import asynccontextmanager
 from collections import defaultdict, deque
 from time import monotonic
@@ -83,45 +84,49 @@ def _enforce_rate_limit(bucket: str, subject: str) -> None:
 
 
 def _status_page(title: str, message: str) -> HTMLResponse:
-    html = f"""
+    safe_title = html.escape(title)
+    safe_message = html.escape(message)
+    html_content = f"""
     <html>
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>{title}</title>
+        <title>{safe_title}</title>
       </head>
       <body style="margin:0;background:#f8fafc;font-family:Helvetica,Arial,sans-serif;color:#0f172a;">
         <div style="max-width:560px;margin:48px auto;padding:0 20px;">
           <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:32px;">
             <div style="font-size:30px;font-weight:800;letter-spacing:-0.8px;">OmniBrief.</div>
-            <h1 style="font-size:24px;margin-top:24px;">{title}</h1>
-            <p style="font-size:16px;line-height:1.7;color:#334155;">{message}</p>
+            <h1 style="font-size:24px;margin-top:24px;">{safe_title}</h1>
+            <p style="font-size:16px;line-height:1.7;color:#334155;">{safe_message}</p>
           </div>
         </div>
       </body>
     </html>
     """
-    return HTMLResponse(content=html)
+    return HTMLResponse(content=html_content)
 
 
 def _action_page(title: str, message: str, action: str, button_label: str, token: str) -> HTMLResponse:
-    html = f"""
+    safe_title = html.escape(title)
+    safe_message = html.escape(message)
+    html_content = f"""
     <html>
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>{title}</title>
+        <title>{safe_title}</title>
       </head>
       <body style="margin:0;background:#f8fafc;font-family:Helvetica,Arial,sans-serif;color:#0f172a;">
         <div style="max-width:560px;margin:48px auto;padding:0 20px;">
           <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:32px;">
             <div style="font-size:30px;font-weight:800;letter-spacing:-0.8px;">OmniBrief.</div>
-            <h1 style="font-size:24px;margin-top:24px;">{title}</h1>
-            <p style="font-size:16px;line-height:1.7;color:#334155;">{message}</p>
+            <h1 style="font-size:24px;margin-top:24px;">{safe_title}</h1>
+            <p style="font-size:16px;line-height:1.7;color:#334155;">{safe_message}</p>
             <form method="post" action="{action}" style="margin-top:24px;">
               <input type="hidden" name="token" value="{token}" />
               <button type="submit" style="display:inline-block;background:#0f172a;color:#ffffff;padding:12px 20px;border-radius:8px;border:none;font-weight:700;cursor:pointer;">
-                {button_label}
+                {html.escape(button_label)}
               </button>
             </form>
           </div>
@@ -129,7 +134,7 @@ def _action_page(title: str, message: str, action: str, button_label: str, token
       </body>
     </html>
     """
-    return HTMLResponse(content=html)
+    return HTMLResponse(content=html_content)
 
 
 @app.get("/healthz")
@@ -159,7 +164,11 @@ async def contact(payload: ContactRequest, request: Request) -> dict:
     from config import ADMIN_EMAIL
     from src.mailer import _send_email
 
-    html = f"""
+    safe_name = html.escape(payload.name)
+    safe_email = html.escape(payload.email)
+    safe_message = html.escape(payload.message)
+
+    html_email = f"""
     <div style="font-family:Helvetica,Arial,sans-serif;background:#f8fafc;padding:48px 20px;color:#0f172a;">
         <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:40px;shadow:0 4px 6px -1px rgb(0 0 0 / 0.1);">
             <div style="border-bottom:2px solid #f1f5f9;padding-bottom:24px;margin-bottom:32px;">
@@ -170,14 +179,14 @@ async def contact(payload: ContactRequest, request: Request) -> dict:
             <div style="margin-bottom:32px;">
                 <label style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;tracking:0.1em;color:#94a3b8;margin-bottom:8px;">Sender Details</label>
                 <div style="font-size:16px;color:#0f172a;background:#f8fafc;padding:16px;border-radius:12px;border:1px solid #f1f5f9;">
-                    <strong>{payload.name}</strong><br/>
-                    <a href="mailto:{payload.email}" style="color:#3b82f6;text-decoration:none;">{payload.email}</a>
+                    <strong>{safe_name}</strong><br/>
+                    <a href="mailto:{safe_email}" style="color:#3b82f6;text-decoration:none;">{safe_email}</a>
                 </div>
             </div>
             
             <div>
                 <label style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;tracking:0.1em;color:#94a3b8;margin-bottom:8px;">Message Content</label>
-                <div style="font-size:16px;line-height:1.6;color:#334155;background:#f8fafc;padding:20px;border-radius:12px;border:1px solid #f1f5f9;white-space:pre-wrap;">{payload.message}</div>
+                <div style="font-size:16px;line-height:1.6;color:#334155;background:#f8fafc;padding:20px;border-radius:12px;border:1px solid #f1f5f9;white-space:pre-wrap;">{safe_message}</div>
             </div>
             
             <div style="margin-top:40px;padding-top:24px;border-top:1px solid #f1f5f9;font-size:12px;color:#94a3b8;text-align:center;">
@@ -191,7 +200,7 @@ async def contact(payload: ContactRequest, request: Request) -> dict:
         await _send_email(
             to_email=ADMIN_EMAIL,
             subject=f"Inquiry: {payload.name} via OmniBrief",
-            html_content=html,
+            html_content=html_email,
         )
         return {"message": "Message sent successfully."}
     except Exception as e:
