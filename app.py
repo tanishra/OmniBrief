@@ -13,6 +13,7 @@ from time import monotonic
 from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, EmailStr
 
 from config import FRONTEND_ORIGINS
@@ -42,6 +43,8 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
+
+templates = Jinja2Templates(directory="templates")
 
 
 class SubscribeRequest(BaseModel):
@@ -83,58 +86,25 @@ def _enforce_rate_limit(bucket: str, subject: str) -> None:
     events.append(now)
 
 
-def _status_page(title: str, message: str) -> HTMLResponse:
-    safe_title = html.escape(title)
-    safe_message = html.escape(message)
-    html_content = f"""
-    <html>
-      <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>{safe_title}</title>
-      </head>
-      <body style="margin:0;background:#f8fafc;font-family:Helvetica,Arial,sans-serif;color:#0f172a;">
-        <div style="max-width:560px;margin:48px auto;padding:0 20px;">
-          <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:32px;">
-            <div style="font-size:30px;font-weight:800;letter-spacing:-0.8px;">OmniBrief.</div>
-            <h1 style="font-size:24px;margin-top:24px;">{safe_title}</h1>
-            <p style="font-size:16px;line-height:1.7;color:#334155;">{safe_message}</p>
-          </div>
-        </div>
-      </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content)
+def _status_page(request: Request, title: str, message: str) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "status.html",
+        {"request": request, "title": title, "message": message}
+    )
 
 
-def _action_page(title: str, message: str, action: str, button_label: str, token: str) -> HTMLResponse:
-    safe_title = html.escape(title)
-    safe_message = html.escape(message)
-    html_content = f"""
-    <html>
-      <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>{safe_title}</title>
-      </head>
-      <body style="margin:0;background:#f8fafc;font-family:Helvetica,Arial,sans-serif;color:#0f172a;">
-        <div style="max-width:560px;margin:48px auto;padding:0 20px;">
-          <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:32px;">
-            <div style="font-size:30px;font-weight:800;letter-spacing:-0.8px;">OmniBrief.</div>
-            <h1 style="font-size:24px;margin-top:24px;">{safe_title}</h1>
-            <p style="font-size:16px;line-height:1.7;color:#334155;">{safe_message}</p>
-            <form method="post" action="{action}" style="margin-top:24px;">
-              <input type="hidden" name="token" value="{token}" />
-              <button type="submit" style="display:inline-block;background:#0f172a;color:#ffffff;padding:12px 20px;border-radius:8px;border:none;font-weight:700;cursor:pointer;">
-                {html.escape(button_label)}
-              </button>
-            </form>
-          </div>
-        </div>
-      </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content)
+def _action_page(request: Request, title: str, message: str, action: str, button_label: str, token: str) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "action.html",
+        {
+            "request": request,
+            "title": title,
+            "message": message,
+            "action": action,
+            "button_label": button_label,
+            "token": token
+        }
+    )
 
 
 @app.get("/healthz")
@@ -147,12 +117,19 @@ async def subscribe(payload: SubscribeRequest, request: Request) -> dict:
     client_ip = _get_client_ip(request)
     _enforce_rate_limit("subscribe_ip", client_ip)
     _enforce_rate_limit("subscribe_email", payload.email.lower())
+    
     subscriber = upsert_pending_subscriber(payload.email)
-    if subscriber["status"] != "active":
-        confirm_url = create_confirm_link(subscriber["id"])
-        await send_confirmation_email(subscriber["email"], confirm_url)
+    
+    if subscriber["status"] == "active":
+        return {
+            "message": "You are already an active subscriber to OmniBrief!"
+        }
+    
+    confirm_url = create_confirm_link(subscriber["id"])
+    await send_confirmation_email(subscriber["email"], confirm_url)
+    
     return {
-        "message": "If this address can receive OmniBrief, a confirmation email has been sent."
+        "message": "A confirmation email has been sent to your inbox."
     }
 
 
@@ -208,8 +185,9 @@ async def contact(payload: ContactRequest, request: Request) -> dict:
 
 
 @app.get("/confirm", response_class=HTMLResponse)
-async def confirm_page(token: str) -> HTMLResponse:
+async def confirm_page(request: Request, token: str) -> HTMLResponse:
     return _action_page(
+        request,
         "Confirm Subscription",
         "Click below to confirm your OmniBrief subscription and start receiving the daily briefing.",
         "/confirm",
@@ -219,23 +197,26 @@ async def confirm_page(token: str) -> HTMLResponse:
 
 
 @app.post("/confirm", response_class=HTMLResponse)
-async def confirm(token: str = Form(...), request: Request = None) -> HTMLResponse:
+async def confirm(request: Request, token: str = Form(...)) -> HTMLResponse:
     _enforce_rate_limit("confirm_ip", _get_client_ip(request))
     subscriber = confirm_subscriber(token)
     if not subscriber:
         return _status_page(
+            request,
             "Confirmation Link Invalid",
             "This confirmation link is invalid, expired, or has already been used.",
         )
     return _status_page(
+        request,
         "Subscription Confirmed",
         f"{subscriber['email']} is now subscribed to OmniBrief.",
     )
 
 
 @app.get("/unsubscribe", response_class=HTMLResponse)
-async def unsubscribe_page(token: str) -> HTMLResponse:
+async def unsubscribe_page(request: Request, token: str) -> HTMLResponse:
     return _action_page(
+        request,
         "Confirm Unsubscribe",
         "Click below if you want to stop receiving the OmniBrief daily briefing.",
         "/unsubscribe",
@@ -245,15 +226,17 @@ async def unsubscribe_page(token: str) -> HTMLResponse:
 
 
 @app.post("/unsubscribe", response_class=HTMLResponse)
-async def unsubscribe(token: str = Form(...), request: Request = None) -> HTMLResponse:
+async def unsubscribe(request: Request, token: str = Form(...)) -> HTMLResponse:
     _enforce_rate_limit("unsubscribe_ip", _get_client_ip(request))
     subscriber = unsubscribe_subscriber(token)
     if not subscriber:
         return _status_page(
+            request,
             "Unsubscribe Link Invalid",
             "This unsubscribe link is invalid, expired, or has already been used.",
         )
     return _status_page(
+        request,
         "You Have Been Unsubscribed",
         f"{subscriber['email']} will no longer receive OmniBrief.",
     )
