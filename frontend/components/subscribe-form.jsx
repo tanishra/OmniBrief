@@ -102,7 +102,9 @@ export default function SubscribeForm({ compact = false, dark = false }) {
       >
         {status === "success" ? (
           <div className="space-y-1">
-            <p className="font-semibold">Check your inbox to confirm your subscription.</p>
+            {!message.includes("already") && (
+              <p className="font-semibold">Check your inbox to confirm your subscription.</p>
+            )}
             <p>{message}</p>
           </div>
         ) : status === "error" ? (
