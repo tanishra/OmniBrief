@@ -39,11 +39,11 @@ class CostTracker:
 
     def get_summary(self) -> str:
         cost = self.calculate_total_cost()
-        return (f"--- 💰 PRIVATE COST AUDIT ---"
-                f"Total Input Tokens:  {self.total_input_tokens:,}"
-                f"Total Output Tokens: {self.total_output_tokens:,}"
-                f"Estimated Run Cost:  ${cost:.4f} (~₹{cost*83:.2f})"
-                f"---------------------------"
+        return (f"\n--- 💰 PRIVATE COST AUDIT ---\n"
+                f"Total Input Tokens:  {self.total_input_tokens:,}\n"
+                f"Total Output Tokens: {self.total_output_tokens:,}\n"
+                f"Estimated Run Cost:  ${cost:.4f} (~₹{cost*83:.2f})\n"
+                f"---------------------------\n"
         )
 
 # Global instance for the run
