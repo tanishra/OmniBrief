@@ -102,7 +102,6 @@ graph TD
 - **Public subscription workflow:** Includes subscribe, email confirmation, and unsubscribe flows through FastAPI.
 - **PostgreSQL-backed persistence:** Stores subscribers, tokens, sent-item history, and delivery logs in Neon/PostgreSQL.
 - **Frontend + API split:** Uses a Next.js landing page and a backend API that can be deployed independently.
-- **Docker-ready deployment:** Runs cleanly on EC2 with Docker Compose for both API and worker flows.
 
 ## Setup
 You can run OmniBrief locally with the backend, worker, and frontend separated.
