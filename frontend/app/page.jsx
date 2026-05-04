@@ -1,5 +1,6 @@
 import SubscribeForm from "../components/subscribe-form";
 import ContactModal from "../components/contact-modal";
+import MaintenanceBanner from "../components/maintenance-banner";
 
 const audience = [
   {
