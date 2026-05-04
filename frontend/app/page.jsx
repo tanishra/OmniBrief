@@ -63,7 +63,9 @@ export default function HomePage() {
             GitHub
           </a>
         </div>
+        <MaintenanceBanner />
       </header>
+
 
       <section id="top" className="mx-auto max-w-7xl px-6 pb-24 pt-20 md:px-10 md:pb-32 md:pt-28">
         <div className="grid gap-14 lg:grid-cols-[minmax(0,1.2fr)_28rem] lg:items-end">
