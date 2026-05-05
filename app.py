@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import html
 from contextlib import asynccontextmanager
-from collections import defaultdict, deque
 from time import monotonic
 
 from fastapi import FastAPI, Form, HTTPException, Request
@@ -25,6 +24,7 @@ from src.persistence import (
     init_db,
     unsubscribe_subscriber,
     upsert_pending_subscriber,
+    enforce_rate_limit,
 )
 
 
@@ -64,27 +64,32 @@ RATE_LIMITS = {
     "unsubscribe_ip": (20, 600),
     "contact_ip": (3, 3600),
 }
-_rate_buckets = defaultdict(deque)
-
-
-def _get_client_ip(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for", "").strip()
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
-
 
 def _enforce_rate_limit(bucket: str, subject: str) -> None:
     limit, window_seconds = RATE_LIMITS[bucket]
-    now = monotonic()
-    key = f"{bucket}:{subject}"
-    events = _rate_buckets[key]
-    while events and now - events[0] > window_seconds:
-        events.popleft()
-    if len(events) >= limit:
+    if not enforce_rate_limit(bucket, subject, limit, window_seconds):
         raise HTTPException(status_code=429, detail="Too many requests. Please try again later.")
-    events.append(now)
 
+
+
+import ipaddress
+
+def _is_trusted_proxy(ip_str: str) -> bool:
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        return ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_unspecified
+    except ValueError:
+        return False
+
+def _get_client_ip(request: Request) -> str:
+    direct_ip = request.client.host if request.client else "unknown"
+    if not _is_trusted_proxy(direct_ip):
+        return direct_ip
+
+    forwarded = request.headers.get("x-forwarded-for", "").strip()
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return direct_ip
 
 def _status_page(request: Request, title: str, message: str) -> HTMLResponse:
     return templates.TemplateResponse(

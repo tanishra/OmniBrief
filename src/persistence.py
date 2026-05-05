@@ -128,6 +128,21 @@ def init_db() -> None:
                 ON delivery_logs (campaign_key, status)
                 """
             )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS rate_limits (
+                    key TEXT NOT NULL,
+                    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_rate_limits_key_timestamp
+                ON rate_limits (key, timestamp)
+                """
+            )
+
         conn.commit()
 
 
@@ -383,3 +398,29 @@ def confirm_subscriber(raw_token: str) -> Optional[Dict[str, Any]]:
 
 def unsubscribe_subscriber(raw_token: str) -> Optional[Dict[str, Any]]:
     return _consume_token(raw_token, "unsubscribe")
+
+
+def enforce_rate_limit(bucket: str, subject: str, limit: int, window_seconds: int) -> bool:
+    """
+    Returns True if allowed, False if rate limited.
+    """
+    key = f"{bucket}:{subject}"
+    cutoff = _utcnow() - timedelta(seconds=window_seconds)
+
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            # Clean up old entries occasionally (could be a background job, but this is simple)
+            cur.execute("DELETE FROM rate_limits WHERE timestamp < %s", (cutoff,))
+
+            # Count recent requests
+            cur.execute("SELECT COUNT(*) FROM rate_limits WHERE key = %s AND timestamp >= %s", (key, cutoff))
+            count = cur.fetchone()[0]
+
+            if count >= limit:
+                conn.commit()
+                return False
+
+            # Log new request
+            cur.execute("INSERT INTO rate_limits (key, timestamp) VALUES (%s, %s)", (key, _utcnow()))
+            conn.commit()
+            return True
