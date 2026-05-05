@@ -1,0 +1,9 @@
+fix: resolve security and architectural issues end-to-end
+
+- SSRF TOCTOU: Override `httpcore` network backend to enforce pre-validated IPs. Add Playwright route interceptor to block unsafe URLs.
+- Prompt Injection: Use randomized delimiters (`<data_{delimiter}>`) and sanitize tags from untrusted inputs in the summarizer.
+- IP Spoofing: Validate trusted internal proxy ranges before trusting `X-Forwarded-For` headers in FastAPI.
+- Dependencies: Pin requirements deterministically.
+- Scraping Reliability: Reuse a single headless Playwright browser globally with a concurrency semaphore.
+- In-Memory Rate Limiting: Migrate FastAPI rate limits to the PostgreSQL database for persistence and scalability.
+- O(N^2) Deduplication: Optimize string matching using token-based Jaccard similarity.
