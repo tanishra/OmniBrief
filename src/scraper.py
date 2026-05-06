@@ -62,7 +62,7 @@ class SafeNetworkBackend(httpcore.AsyncNetworkBackend):
         local_address: Optional[str] = None,
         socket_options: Optional[List[Any]] = None,
     ) -> httpcore.AsyncNetworkStream:
-        ip = _resolve_and_check_safe(f"http://{host}")
+        ip = await _resolve_and_check_safe_async(f"http://{host}")
         if not ip:
             raise Exception("SSRF Blocked: Unsafe IP")
         return await self.original_backend.connect_tcp(
@@ -96,13 +96,18 @@ _browser = None
 _playwright = None
 _browser_semaphore = None
 
+import asyncio
+_browser_lock = asyncio.Lock()
+
 async def _get_browser():
     global _browser, _playwright, _browser_semaphore
     if _browser_semaphore is None:
         _browser_semaphore = asyncio.Semaphore(3)
-    if _browser is None:
-        _playwright = await async_playwright().start()
-        _browser = await _playwright.chromium.launch(headless=True)
+
+    async with _browser_lock:
+        if _browser is None:
+            _playwright = await async_playwright().start()
+            _browser = await _playwright.chromium.launch(headless=True)
     return _browser
 
 async def _close_browser():
@@ -154,6 +159,7 @@ async def _playwright_route_interceptor(route):
     if not ip:
          await route.abort()
          return
+
     await route.continue_()
 
 async def _scrape_playwright(url: str) -> Dict[str, Any]:
@@ -169,24 +175,34 @@ async def _scrape_playwright(url: str) -> Dict[str, Any]:
     async with _browser_semaphore:
         try:
             browser = await _get_browser()
-            context = await browser.new_context(user_agent=HEADERS["User-Agent"])
-            await context.route("**/*", _playwright_route_interceptor)
-            page = await context.new_page()
-            await page.goto(url, wait_until="networkidle", timeout=20000)
-            
-            content = await page.content()
-            soup = BeautifulSoup(content, "html.parser")
-            
-            # Extract basic text
-            for s in soup(["script", "style"]): s.decompose()
-            text = soup.get_text(separator=" ", strip=True)
-            
-            # Try to find OG image again in rendered HTML
-            og_image = soup.find("meta", property="og:image")
-            image_url = og_image["content"] if og_image else None
-            
-            await context.close()
-            return {"og_image": image_url, "full_text": text[:3000]}
+            context = await browser.new_context(user_agent=HEADERS["User-Agent"], ignore_https_errors=True)
+            try:
+                # Inject anti-bot evasion script
+                await context.add_init_script("""
+                    Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+                    window.chrome = { runtime: {} };
+                    Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3]});
+                    Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']});
+                """)
+                await context.route("**/*", _playwright_route_interceptor)
+
+                page = await context.new_page()
+                await page.goto(url, wait_until="networkidle", timeout=20000)
+
+                content = await page.content()
+                soup = BeautifulSoup(content, "html.parser")
+
+                # Extract basic text
+                for s in soup(["script", "style"]): s.decompose()
+                text = soup.get_text(separator=" ", strip=True)
+
+                # Try to find OG image again in rendered HTML
+                og_image = soup.find("meta", property="og:image")
+                image_url = og_image["content"] if og_image else None
+
+                return {"og_image": image_url, "full_text": text[:3000]}
+            finally:
+                await context.close()
         except Exception as e:
             logger.warning(f"    ⚠️ Playwright fallback failed for {url[:30]}: {e}")
             return {}

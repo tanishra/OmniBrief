@@ -1,3 +1,5 @@
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+import httpx
 from src.logger import logger
 """
 src/fetchers/reddit.py
@@ -95,6 +97,7 @@ async def fetch_reddit(
     return all_posts[:max_items]
 
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)))
 async def _fetch_subreddit_posts(
     client: httpx.AsyncClient,
     subreddit: str,

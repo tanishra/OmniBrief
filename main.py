@@ -30,6 +30,7 @@ from src.fetchers.reddit          import fetch_reddit
 from src.renderer                 import render_digest
 from src.mailer                   import send_digest
 from src.persistence              import (
+    cleanup_rate_limits,
     cleanup_history,
     cleanup_tokens,
     create_unsubscribe_link,
@@ -237,6 +238,7 @@ async def run() -> None:
             )
     
     cleanup_history()
+    cleanup_rate_limits()
     
     # PRIVATE COST AUDIT (Step 7)
     from src.cost_tracker import tracker

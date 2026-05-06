@@ -433,8 +433,8 @@ def enforce_rate_limit(bucket: str, subject: str, limit: int, window_seconds: in
 
     with get_conn() as conn:
         with conn.cursor() as cur:
-            # Clean up old entries occasionally (could be a background job, but this is simple)
-            cur.execute("DELETE FROM rate_limits WHERE timestamp < %s", (cutoff,))
+            # Clean up old entries for THIS key to save space over time
+            cur.execute("DELETE FROM rate_limits WHERE key = %s AND timestamp < %s", (key, cutoff))
 
             # Count recent requests
             cur.execute("SELECT COUNT(*) FROM rate_limits WHERE key = %s AND timestamp >= %s", (key, cutoff))
@@ -449,6 +449,14 @@ def enforce_rate_limit(bucket: str, subject: str, limit: int, window_seconds: in
             conn.commit()
             return True
 
+def cleanup_rate_limits(days: int = 2) -> None:
+    """Prunes old rate limit data."""
+    cutoff = _utcnow() - timedelta(days=days)
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM rate_limits WHERE timestamp < %s", (cutoff,))
+        conn.commit()
+
 
 def archive_newsletter(campaign_key: str, html_content: str) -> None:
     with get_conn() as conn:
@@ -462,7 +470,6 @@ def archive_newsletter(campaign_key: str, html_content: str) -> None:
                 (campaign_key, html_content)
             )
         conn.commit()
-
 
 def record_feedback(campaign_key: str, subscriber_email: str, vote: str) -> None:
     with get_conn() as conn:
