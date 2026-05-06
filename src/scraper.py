@@ -1,3 +1,4 @@
+from src.logger import logger
 
 import socket
 import ipaddress
@@ -158,7 +159,7 @@ async def _playwright_route_interceptor(route):
 async def _scrape_playwright(url: str) -> Dict[str, Any]:
     """Headless browser fallback for heavy JS sites."""
     if not await _resolve_and_check_safe_async(url):
-        print(f"    🚫 SSRF Blocked (Playwright): {url[:50]}...")
+        logger.warning(f"    🚫 SSRF Blocked (Playwright): {url[:50]}...")
         return {}
         
     global _browser_semaphore
@@ -187,13 +188,13 @@ async def _scrape_playwright(url: str) -> Dict[str, Any]:
             await context.close()
             return {"og_image": image_url, "full_text": text[:3000]}
         except Exception as e:
-            print(f"    ⚠️ Playwright fallback failed for {url[:30]}: {e}")
+            logger.warning(f"    ⚠️ Playwright fallback failed for {url[:30]}: {e}")
             return {}
 
 async def fetch_metadata(url: str) -> Dict[str, Any]:
     """Primary: fast HTTPX. Fallback: Playwright."""
     if not _resolve_and_check_safe(url):
-        print(f"    🚫 SSRF Blocked (HTTPX): {url[:50]}...")
+        logger.warning(f"    🚫 SSRF Blocked (HTTPX): {url[:50]}...")
         return {}
 
     try:
@@ -211,17 +212,17 @@ async def fetch_metadata(url: str) -> Dict[str, Any]:
                 
                 # If text is too short, site likely requires JS
                 if len(text) < 500:
-                    print(f"    🔄 Low content found, triggering Playwright fallback for {url[:30]}...")
+                    logger.info(f"    🔄 Low content found, triggering Playwright fallback for {url[:30]}...")
                     return await _scrape_playwright(url)
                 
                 return {"og_image": image_url, "full_text": text[:3000]}
             
             elif resp.status_code in (403, 401, 429):
-                print(f"    🔄 Blocked ({resp.status_code}), triggering Playwright fallback...")
+                logger.info(f"    🔄 Blocked ({resp.status_code}), triggering Playwright fallback...")
                 return await _scrape_playwright(url)
                 
     except Exception as e:
-        print(f"    ⚠️ httpx failed, triggering Playwright fallback for {url[:30]}: {e}")
+        logger.warning(f"    ⚠️ httpx failed, triggering Playwright fallback for {url[:30]}: {e}")
         return await _scrape_playwright(url)
     return {}
 

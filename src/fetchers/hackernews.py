@@ -1,3 +1,4 @@
+from src.logger import logger
 """
 src/fetchers/hackernews.py
 Fetches top HN posts that are AI/ML related using the Algolia HN Search API.
@@ -75,5 +76,5 @@ async def fetch_hackernews(max_items: int = 8) -> List[Dict[str, Any]]:
 if __name__ == "__main__":
     items = asyncio.run(fetch_hackernews())
     for i in items:
-        print(f"[{i['points']}pts] {i['title']}")
-        print(f"  → {i['url']}\n")
+        logger.info(f"[{i['points']}pts] {i['title']}")
+        logger.info(f"  → {i['url']}\n")

@@ -25,6 +25,7 @@ from src.persistence import (
     unsubscribe_subscriber,
     upsert_pending_subscriber,
     enforce_rate_limit,
+    record_feedback,
 )
 
 
@@ -245,3 +246,27 @@ async def unsubscribe(request: Request, token: str = Form(...)) -> HTMLResponse:
         "You Have Been Unsubscribed",
         f"{subscriber['email']} will no longer receive OmniBrief.",
     )
+
+
+import hmac
+import hashlib
+from config import NEWSLETTER_TOKEN_SECRET
+
+def _generate_feedback_hmac(campaign_key: str, email: str, vote: str) -> str:
+    message = f"{campaign_key}:{email}:{vote}".encode('utf-8')
+    signature = hmac.new(NEWSLETTER_TOKEN_SECRET.encode('utf-8'), message, hashlib.sha256).hexdigest()
+    return signature
+
+@app.get("/feedback", response_class=HTMLResponse)
+async def feedback(request: Request, campaign: str, email: str, vote: str, sig: str) -> HTMLResponse:
+    expected_sig = _generate_feedback_hmac(campaign, email, vote)
+    if not hmac.compare_digest(expected_sig, sig):
+        return _status_page(request, "Invalid Link", "This feedback link is invalid or has expired.")
+
+    if vote not in ("up", "down"):
+        return _status_page(request, "Invalid Vote", "Invalid feedback action.")
+
+    record_feedback(campaign, email, vote)
+
+    response_msg = "Thanks for your feedback! We're glad you found this digest useful." if vote == "up" else "Thanks for your feedback. We'll use this to improve future digests."
+    return _status_page(request, "Feedback Received", response_msg)

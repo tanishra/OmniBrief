@@ -1,3 +1,4 @@
+from src.logger import logger
 """
 main.py — OmniBrief Orchestrator (V6.0 Agentic Engine)
 """
@@ -39,9 +40,23 @@ from src.persistence              import (
     load_history,
     mark_sent,
     record_delivery,
+    archive_newsletter,
 )
 from src.agent_graph              import create_graph
 
+
+import hmac
+import hashlib
+from urllib.parse import quote
+def _generate_feedback_hmac(campaign_key: str, email: str, vote: str) -> str:
+    message = f"{campaign_key}:{email}:{vote}".encode('utf-8')
+    signature = hmac.new(NEWSLETTER_TOKEN_SECRET.encode('utf-8'), message, hashlib.sha256).hexdigest()
+    return signature
+
+def _build_feedback_url(campaign_key: str, email: str, vote: str) -> str:
+    sig = _generate_feedback_hmac(campaign_key, email, vote)
+    base = APP_BASE_URL.rstrip("/")
+    return f"{base}/feedback?campaign={quote(campaign_key)}&email={quote(email)}&vote={vote}&sig={sig}"
 
 def validate_config() -> None:
     """Fail fast if required env vars are missing."""
@@ -57,7 +72,7 @@ def validate_config() -> None:
 
 async def fetch_raw_data() -> tuple:
     """Runs all fast fetchers concurrently. Returns (data, stats)."""
-    print("📡 Fetching content from all sources in parallel...\n")
+    logger.info("📡 Fetching content from all sources in parallel...\n")
     results = await asyncio.gather(
         fetch_hackernews(HN_MAX_ITEMS),
         fetch_rss_feeds(RSS_FEEDS, RSS_MAX_PER_FEED),
@@ -71,10 +86,10 @@ async def fetch_raw_data() -> tuple:
     stats = {}
     def safe(result, label):
         if isinstance(result, Exception):
-            print(f"  ⚠️  {label} fetch failed: {result}")
+            logger.warning(f"  ⚠️  {label} fetch failed: {result}")
             stats[label] = "❌ Failed"
             return []
-        print(f"  ✅ {label}: {len(result)} items")
+        logger.info(f"  ✅ {label}: {len(result)} items")
         stats[label] = f"✅ {len(result)} items"
         return result
 
@@ -92,9 +107,9 @@ async def fetch_raw_data() -> tuple:
 async def run() -> None:
     """Main pipeline: Fetch → Agentic Graph → Render → Send."""
 
-    print("\n" + "="*58)
-    print("  ⚡  OMNIBRIEF V6.0 — AGENTIC ENGINE ACTIVE")
-    print("="*58 + "\n")
+    logger.info("\n" + "="*58)
+    logger.info("  ⚡  OMNIBRIEF V6.0 — AGENTIC ENGINE ACTIVE")
+    logger.info("="*58 + "\n")
 
     # ── Step 1: Init ──────────────────────────────────────────
     validate_config()
@@ -107,7 +122,7 @@ async def run() -> None:
     raw_data, health_stats = await fetch_raw_data()
     
     # ── Step 3: Filter History ────────────────────────────────
-    print("\n🧠 Filtering previously sent items...")
+    logger.info("\n🧠 Filtering previously sent items...")
     filtered_data = {k: [] for k in raw_data.keys()}
     for section, items in raw_data.items():
         for item in items:
@@ -130,7 +145,7 @@ async def run() -> None:
     today_id = datetime.now().strftime("%Y-%m-%d")
     config = {"configurable": {"thread_id": today_id}}
 
-    print(f"\n🚀 Executing Intelligence Graph (Thread: {today_id})...")
+    logger.info(f"\n🚀 Executing Intelligence Graph (Thread: {today_id})...")
     final_state = await graph.ainvoke(initial_state, config=config)
     
     # ── Step 5: Render & Deliver ──────────────────────────────
@@ -138,7 +153,7 @@ async def run() -> None:
     total_items = sum(len(v) for v in summarized.values())
     
     if total_items == 0:
-        print("📭 No new unique items found. Skipping email.")
+        logger.info("📭 No new unique items found. Skipping email.")
         return
 
     from datetime import datetime
@@ -146,21 +161,43 @@ async def run() -> None:
     campaign_key = datetime.now().strftime("%Y-%m-%d")
     subscribers = list_active_subscribers_for_campaign(campaign_key)
     if not subscribers:
-        print("📭 No active subscribers found for this campaign. Skipping email.")
+        logger.info("📭 No active subscribers found for this campaign. Skipping email.")
         return
 
-    print(f"\n🎨 Rendering and Delivering {total_items} items to {len(subscribers)} subscribers...")
+
+    logger.info(f"\n🎨 Rendering and Delivering {total_items} items to {len(subscribers)} subscribers...")
+
+    # Generate a generic version of the HTML for the archive (no subscriber-specific links)
+    generic_html = render_digest(
+        summarized,
+        health_stats,
+        final_state["synthesis"],
+        unsubscribe_url=f"{APP_BASE_URL.rstrip('/')}/unsubscribe",
+        feedback_up_url=f"{APP_BASE_URL.rstrip('/')}/feedback",
+        feedback_down_url=f"{APP_BASE_URL.rstrip('/')}/feedback"
+    )
+
+    try:
+        archive_newsletter(campaign_key, generic_html)
+        logger.info(f"  ✅ Archived generic newsletter for campaign {campaign_key}")
+    except Exception as e:
+        logger.error(f"  ⚠️ Failed to archive newsletter: {e}")
 
     semaphore = asyncio.Semaphore(MAX_BROADCAST_CONCURRENCY)
+
 
     async def deliver_to_subscriber(subscriber: dict) -> tuple[bool, str]:
         async with semaphore:
             unsubscribe_url = create_unsubscribe_link(subscriber["id"])
+            feedback_up_url = _build_feedback_url(campaign_key, subscriber["email"], "up")
+            feedback_down_url = _build_feedback_url(campaign_key, subscriber["email"], "down")
             html = render_digest(
                 summarized,
                 health_stats,
                 final_state["synthesis"],
                 unsubscribe_url=unsubscribe_url,
+                feedback_up_url=feedback_up_url,
+                feedback_down_url=feedback_down_url,
             )
             try:
                 result = await send_digest(html, subscriber["email"])
@@ -178,14 +215,14 @@ async def run() -> None:
                     status="failed",
                     error=str(exc)[:1000],
                 )
-                print(f"  ⚠️ Delivery failed for {subscriber['email']}: {exc}")
+                logger.warning(f"  ⚠️ Delivery failed for {subscriber['email']}: {exc}")
                 return False, subscriber["email"]
 
     delivery_results = await asyncio.gather(*(deliver_to_subscriber(s) for s in subscribers))
     sent_count = sum(1 for ok, _ in delivery_results if ok)
     failed_count = len(delivery_results) - sent_count
 
-    print(f"📬 Broadcast complete: {sent_count} sent, {failed_count} failed.")
+    logger.info(f"📬 Broadcast complete: {sent_count} sent, {failed_count} failed.")
     if sent_count == 0:
         raise RuntimeError("Digest generation completed, but delivery failed for all subscribers.")
     
@@ -203,18 +240,18 @@ async def run() -> None:
     
     # PRIVATE COST AUDIT (Step 7)
     from src.cost_tracker import tracker
-    print(tracker.get_summary())
+    logger.info(tracker.get_summary())
 
-    print("\n" + "="*58)
-    print("  ✅  OMNIBRIEF DELIVERED SUCCESSFULLY")
-    print("="*58 + "\n")
+    logger.info("\n" + "="*58)
+    logger.info("  ✅  OMNIBRIEF DELIVERED SUCCESSFULLY")
+    logger.info("="*58 + "\n")
 
 
 async def main() -> None:
     try:
         await run()
     except Exception as e:
-        print(f"\n❌ Fatal error:\n{traceback.format_exc()}")
+        logger.error(f"\n❌ Fatal error:\n{traceback.format_exc()}")
         sys.exit(1)
 
 if __name__ == "__main__":

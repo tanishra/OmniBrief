@@ -1,3 +1,4 @@
+from src.logger import logger
 """
 src/renderer.py
 Renders the Jinja2 HTML email template with all digest sections.
@@ -17,6 +18,8 @@ def render_digest(
     health_stats: Dict = None,
     synthesis: str = "",
     unsubscribe_url: str = "",
+    feedback_up_url: str = "",
+    feedback_down_url: str = "",
 ) -> str:
     """
     Takes the summarized digest data and renders it into the HTML email template.
@@ -59,6 +62,8 @@ def render_digest(
         health        = health_stats or {},
         synthesis     = synthesis,
         unsubscribe_url = unsubscribe_url,
+        feedback_up_url = feedback_up_url,
+        feedback_down_url = feedback_down_url,
     )
 
     return html

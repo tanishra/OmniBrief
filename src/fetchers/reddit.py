@@ -1,3 +1,4 @@
+from src.logger import logger
 """
 src/fetchers/reddit.py
 Fetches top AI posts from Reddit using the public JSON API.
@@ -84,7 +85,7 @@ async def fetch_reddit(
                     })
 
             except (httpx.HTTPStatusError, httpx.RequestError) as e:
-                print(f"  ⚠️  Reddit r/{subreddit} fetch failed after fallbacks: {e}")
+                logger.warning(f"  ⚠️  Reddit r/{subreddit} fetch failed after fallbacks: {e}")
                 continue
 
             await asyncio.sleep(0.5)   # Be polite to Reddit
@@ -128,5 +129,5 @@ if __name__ == "__main__":
     from config import REDDIT_SUBREDDITS, REDDIT_MAX_ITEMS
     items = asyncio.run(fetch_reddit(REDDIT_SUBREDDITS, REDDIT_MAX_ITEMS))
     for i in items:
-        print(f"[{i['subreddit']}] ▲{i['score']}  {i['title']}")
-        print(f"   {i['url']}\n")
+        logger.info(f"[{i['subreddit']}] ▲{i['score']}  {i['title']}")
+        logger.info(f"   {i['url']}\n")

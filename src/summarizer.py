@@ -1,3 +1,4 @@
+from src.logger import logger
 import re
 
 import asyncio
@@ -168,7 +169,7 @@ async def generate_executive_synthesis(summarized_data: Dict[str, List[Dict]], r
             usage = data.get("usage")
             return (report, usage) if return_usage else report
     except Exception as e:
-        print(f"  ⚠️ Synthesis failed: {e}")
+        logger.warning(f"  ⚠️ Synthesis failed: {e}")
         return ("Intelligence engine was unable to synthesize a trend report.", None) if return_usage else "Intelligence engine failed."
 
 async def summarize_all(digest_data: Dict[str, List[Dict]]) -> Dict[str, List[Dict]]:

@@ -1,3 +1,4 @@
+from src.logger import logger
 """
 src/fetchers/arxiv.py
 Fetches latest AI research papers from ArXiv using their free Atom/XML API.
@@ -41,7 +42,7 @@ async def fetch_arxiv(categories: List[str], max_items: int = 8) -> List[Dict[st
                     resp = await client.get(ARXIV_API, params=params)
                     if resp.status_code == 429:
                         wait = (attempt + 1) * 5
-                        print(f"  ⚠️  ArXiv 429 - Waiting {wait}s...")
+                        logger.warning(f"  ⚠️  ArXiv 429 - Waiting {wait}s...")
                         await asyncio.sleep(wait)
                         continue
                     
@@ -95,6 +96,6 @@ if __name__ == "__main__":
     from config import ARXIV_CATEGORIES, ARXIV_MAX_ITEMS
     items = asyncio.run(fetch_arxiv(ARXIV_CATEGORIES, ARXIV_MAX_ITEMS))
     for i in items:
-        print(f"📄 {i['title']}")
-        print(f"   Authors: {', '.join(i['authors'])}")
-        print(f"   {i['url']}\n")
+        logger.info(f"📄 {i['title']}")
+        logger.info(f"   Authors: {', '.join(i['authors'])}")
+        logger.info(f"   {i['url']}\n")
