@@ -1,3 +1,4 @@
+from src.logger import logger
 """
 src/fetchers/github_trending.py
 V7.3: Authority-Based Scouting & Velocity Tracking.
@@ -53,7 +54,7 @@ async def fetch_github_trending(
 
         # Strategy 3: Authority Scout (Top Labs)
         if organizations:
-            print(f"    🔎 Scouting {len(organizations)} top AI labs...")
+            logger.info(f"    🔎 Scouting {len(organizations)} top AI labs...")
             for org in organizations:
                 # Search for ANY AI-related python repo pushed in this org recently
                 q = f"org:{org} language:python pushed:>{since_date}"

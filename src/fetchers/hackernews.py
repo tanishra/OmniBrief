@@ -1,3 +1,6 @@
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+import httpx
+from src.logger import logger
 """
 src/fetchers/hackernews.py
 Fetches top HN posts that are AI/ML related using the Algolia HN Search API.
@@ -22,6 +25,7 @@ HN_API_BASE = "https://hacker-news.firebaseio.com/v0"
 HN_ALGOLIA  = "https://hn.algolia.com/api/v1/search"
 
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)))
 async def fetch_hackernews(max_items: int = 8) -> List[Dict[str, Any]]:
     """
     Fetches top HN stories and filters for AI-related ones.
@@ -75,5 +79,5 @@ async def fetch_hackernews(max_items: int = 8) -> List[Dict[str, Any]]:
 if __name__ == "__main__":
     items = asyncio.run(fetch_hackernews())
     for i in items:
-        print(f"[{i['points']}pts] {i['title']}")
-        print(f"  → {i['url']}\n")
+        logger.info(f"[{i['points']}pts] {i['title']}")
+        logger.info(f"  → {i['url']}\n")

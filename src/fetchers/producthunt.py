@@ -1,3 +1,4 @@
+from src.logger import logger
 """
 src/fetchers/producthunt.py
 Fetches top AI products launched on ProductHunt via their RSS feed.
@@ -65,6 +66,6 @@ async def fetch_producthunt(max_items: int = 5) -> List[Dict[str, Any]]:
 if __name__ == "__main__":
     items = asyncio.run(fetch_producthunt(5))
     for i in items:
-        print(f"🚀 {i['title']}")
-        print(f"   {i['summary'][:100]}")
-        print(f"   {i['url']}\n")
+        logger.info(f"🚀 {i['title']}")
+        logger.info(f"   {i['summary'][:100]}")
+        logger.info(f"   {i['url']}\n")

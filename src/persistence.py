@@ -1,9 +1,10 @@
+from __future__ import annotations
 """
 src/persistence.py
 PostgreSQL-backed persistence for digest history, subscribers, tokens, and delivery logs.
 """
 
-from __future__ import annotations
+from src.logger import logger
 
 import hashlib
 import hmac
@@ -136,6 +137,29 @@ def init_db() -> None:
                 )
                 """
             )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS newsletter_archives (
+                    campaign_key TEXT PRIMARY KEY,
+                    html_content TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS campaign_feedback (
+                    id SERIAL PRIMARY KEY,
+                    campaign_key TEXT NOT NULL,
+                    subscriber_email TEXT NOT NULL,
+                    vote TEXT NOT NULL CHECK (vote IN ('up', 'down')),
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    UNIQUE (campaign_key, subscriber_email)
+                )
+                """
+            )
+
             cur.execute(
                 """
                 CREATE INDEX IF NOT EXISTS idx_rate_limits_key_timestamp
@@ -409,8 +433,8 @@ def enforce_rate_limit(bucket: str, subject: str, limit: int, window_seconds: in
 
     with get_conn() as conn:
         with conn.cursor() as cur:
-            # Clean up old entries occasionally (could be a background job, but this is simple)
-            cur.execute("DELETE FROM rate_limits WHERE timestamp < %s", (cutoff,))
+            # Clean up old entries for THIS key to save space over time
+            cur.execute("DELETE FROM rate_limits WHERE key = %s AND timestamp < %s", (key, cutoff))
 
             # Count recent requests
             cur.execute("SELECT COUNT(*) FROM rate_limits WHERE key = %s AND timestamp >= %s", (key, cutoff))
@@ -424,3 +448,39 @@ def enforce_rate_limit(bucket: str, subject: str, limit: int, window_seconds: in
             cur.execute("INSERT INTO rate_limits (key, timestamp) VALUES (%s, %s)", (key, _utcnow()))
             conn.commit()
             return True
+
+def cleanup_rate_limits(days: int = 2) -> None:
+    """Prunes old rate limit data."""
+    cutoff = _utcnow() - timedelta(days=days)
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM rate_limits WHERE timestamp < %s", (cutoff,))
+        conn.commit()
+
+
+def archive_newsletter(campaign_key: str, html_content: str) -> None:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO newsletter_archives (campaign_key, html_content)
+                VALUES (%s, %s)
+                ON CONFLICT (campaign_key) DO NOTHING
+                """,
+                (campaign_key, html_content)
+            )
+        conn.commit()
+
+def record_feedback(campaign_key: str, subscriber_email: str, vote: str) -> None:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO campaign_feedback (campaign_key, subscriber_email, vote)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (campaign_key, subscriber_email) DO UPDATE
+                SET vote = EXCLUDED.vote
+                """,
+                (campaign_key, subscriber_email, vote)
+            )
+        conn.commit()
