@@ -34,7 +34,7 @@ async def _do_openai_call(client: httpx.AsyncClient, payload: dict) -> str:
     return data["choices"][0]["message"]["content"].strip()
 
 
-def _get_system_prompt() -> str:
+def _get_system_prompt(delimiter: str) -> str:
     return f"""You are a Senior Lead AI Engineer. Your job is to summarize AI news and research for other technical developers.
 
 CORE MISSION:
@@ -200,7 +200,7 @@ Go beyond the headline. Explain the technical "why" or the strategic impact."""
             "max_tokens":  OPENAI_MAX_TOKENS,
             "temperature": OPENAI_TEMPERATURE,
             "messages": [
-                {"role": "system", "content": _get_system_prompt()},
+                {"role": "system", "content": _get_system_prompt(delimiter)},
                 {"role": "user",   "content": content},
             ],
         }
