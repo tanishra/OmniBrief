@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import html
 from contextlib import asynccontextmanager
-from collections import defaultdict, deque
 from time import monotonic
 
 from fastapi import FastAPI, Form, HTTPException, Request
@@ -22,17 +21,21 @@ from src.persistence import (
     cleanup_tokens,
     confirm_subscriber,
     create_confirm_link,
-    init_db,
-    unsubscribe_subscriber,
+        unsubscribe_subscriber,
     upsert_pending_subscriber,
+    enforce_rate_limit,
+    record_feedback,
 )
 
 
+from src.persistence import init_async_pool, close_async_pool
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    init_db()
-    cleanup_tokens()
+    await init_async_pool()
+    await cleanup_tokens()
     yield
+    await close_async_pool()
 
 
 app = FastAPI(title="OmniBrief API", version="1.0.0", lifespan=lifespan)
@@ -64,27 +67,32 @@ RATE_LIMITS = {
     "unsubscribe_ip": (20, 600),
     "contact_ip": (3, 3600),
 }
-_rate_buckets = defaultdict(deque)
 
+async def _enforce_rate_limit(bucket: str, subject: str) -> None:
+    limit, window_seconds = RATE_LIMITS[bucket]
+    if not await enforce_rate_limit(bucket, subject, limit, window_seconds):
+        raise HTTPException(status_code=429, detail="Too many requests. Please try again later.")
+
+
+
+import ipaddress
+
+def _is_trusted_proxy(ip_str: str) -> bool:
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        return ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_unspecified
+    except ValueError:
+        return False
 
 def _get_client_ip(request: Request) -> str:
+    direct_ip = request.client.host if request.client else "unknown"
+    if not _is_trusted_proxy(direct_ip):
+        return direct_ip
+
     forwarded = request.headers.get("x-forwarded-for", "").strip()
     if forwarded:
         return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
-
-
-def _enforce_rate_limit(bucket: str, subject: str) -> None:
-    limit, window_seconds = RATE_LIMITS[bucket]
-    now = monotonic()
-    key = f"{bucket}:{subject}"
-    events = _rate_buckets[key]
-    while events and now - events[0] > window_seconds:
-        events.popleft()
-    if len(events) >= limit:
-        raise HTTPException(status_code=429, detail="Too many requests. Please try again later.")
-    events.append(now)
-
+    return direct_ip
 
 def _status_page(request: Request, title: str, message: str) -> HTMLResponse:
     return templates.TemplateResponse(
@@ -115,17 +123,17 @@ async def healthz() -> dict:
 @app.post("/subscribe")
 async def subscribe(payload: SubscribeRequest, request: Request) -> dict:
     client_ip = _get_client_ip(request)
-    _enforce_rate_limit("subscribe_ip", client_ip)
-    _enforce_rate_limit("subscribe_email", payload.email.lower())
+    await _enforce_rate_limit("subscribe_ip", client_ip)
+    await _enforce_rate_limit("subscribe_email", payload.email.lower())
     
-    subscriber = upsert_pending_subscriber(payload.email)
+    subscriber = await upsert_pending_subscriber(payload.email)
     
     if subscriber["status"] == "active":
         return {
             "message": "You are already an active subscriber to OmniBrief!"
         }
     
-    confirm_url = create_confirm_link(subscriber["id"])
+    confirm_url = await create_confirm_link(subscriber["id"])
     await send_confirmation_email(subscriber["email"], confirm_url)
     
     return {
@@ -136,7 +144,7 @@ async def subscribe(payload: SubscribeRequest, request: Request) -> dict:
 @app.post("/contact")
 async def contact(payload: ContactRequest, request: Request) -> dict:
     client_ip = _get_client_ip(request)
-    _enforce_rate_limit("contact_ip", client_ip)
+    await _enforce_rate_limit("contact_ip", client_ip)
 
     from config import ADMIN_EMAIL
     from src.mailer import _send_email
@@ -198,8 +206,8 @@ async def confirm_page(request: Request, token: str) -> HTMLResponse:
 
 @app.post("/confirm", response_class=HTMLResponse)
 async def confirm(request: Request, token: str = Form(...)) -> HTMLResponse:
-    _enforce_rate_limit("confirm_ip", _get_client_ip(request))
-    subscriber = confirm_subscriber(token)
+    await _enforce_rate_limit("confirm_ip", _get_client_ip(request))
+    subscriber = await confirm_subscriber(token)
     if not subscriber:
         return _status_page(
             request,
@@ -227,8 +235,8 @@ async def unsubscribe_page(request: Request, token: str) -> HTMLResponse:
 
 @app.post("/unsubscribe", response_class=HTMLResponse)
 async def unsubscribe(request: Request, token: str = Form(...)) -> HTMLResponse:
-    _enforce_rate_limit("unsubscribe_ip", _get_client_ip(request))
-    subscriber = unsubscribe_subscriber(token)
+    await _enforce_rate_limit("unsubscribe_ip", _get_client_ip(request))
+    subscriber = await unsubscribe_subscriber(token)
     if not subscriber:
         return _status_page(
             request,
@@ -240,3 +248,27 @@ async def unsubscribe(request: Request, token: str = Form(...)) -> HTMLResponse:
         "You Have Been Unsubscribed",
         f"{subscriber['email']} will no longer receive OmniBrief.",
     )
+
+
+import hmac
+import hashlib
+from config import NEWSLETTER_TOKEN_SECRET
+
+def _generate_feedback_hmac(campaign_key: str, email: str, vote: str) -> str:
+    message = f"{campaign_key}:{email}:{vote}".encode('utf-8')
+    signature = hmac.new(NEWSLETTER_TOKEN_SECRET.encode('utf-8'), message, hashlib.sha256).hexdigest()
+    return signature
+
+@app.get("/feedback", response_class=HTMLResponse)
+async def feedback(request: Request, campaign: str, email: str, vote: str, sig: str) -> HTMLResponse:
+    expected_sig = _generate_feedback_hmac(campaign, email, vote)
+    if not hmac.compare_digest(expected_sig, sig):
+        return _status_page(request, "Invalid Link", "This feedback link is invalid or has expired.")
+
+    if vote not in ("up", "down"):
+        return _status_page(request, "Invalid Vote", "Invalid feedback action.")
+
+    await record_feedback(campaign, email, vote)
+
+    response_msg = "Thanks for your feedback! We're glad you found this digest useful." if vote == "up" else "Thanks for your feedback. We'll use this to improve future digests."
+    return _status_page(request, "Feedback Received", response_msg)

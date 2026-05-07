@@ -1,3 +1,4 @@
+from src.logger import logger
 """
 src/fetchers/rss_feeds.py
 Parses multiple RSS/Atom feeds to pull AI news articles.
@@ -50,7 +51,7 @@ def _parse_single_feed(feed_config: Dict, max_items: int) -> List[Dict[str, Any]
 
         return items
     except Exception as e:
-        print(f"  ⚠️  Error parsing {feed_config['name']}: {e}")
+        logger.warning(f"  ⚠️  Error parsing {feed_config['name']}: {e}")
         return []
 
 
@@ -84,4 +85,4 @@ if __name__ == "__main__":
     from config import RSS_FEEDS
     items = asyncio.run(fetch_rss_feeds(RSS_FEEDS, 3))
     for i in items:
-        print(f"[{i['source']}] {i['title']}")
+        logger.info(f"[{i['source']}] {i['title']}")

@@ -1,3 +1,4 @@
+from src.logger import logger
 """
 src/agent_graph.py
 The LangGraph Intelligence Engine.
@@ -27,16 +28,16 @@ smart_llm = ChatOpenAI(api_key=OPENAI_API_KEY, model="gpt-4o", temperature=0.3)
 # ─── NODES ──────────────────────────────────────────────────────────────────
 
 def curation_node(state: AgentState):
-    print("  🧠 Graph: Initial curation and deduplication...")
+    logger.info("  🧠 Graph: Initial curation and deduplication...")
     from src.processor import deduplicate_and_correlate
     processed = deduplicate_and_correlate(state["raw_data"])
     counts = {k: len(v) for k, v in processed.items()}
-    print(f"    ✅ Curation complete. Counts: {counts}")
+    logger.info(f"    ✅ Curation complete. Counts: {counts}")
     return {"raw_data": processed, "iterations": 0}
 
 async def ranking_node(state: AgentState):
     """Personalized technical novelty ranking using PROFILE.md."""
-    print("  ⭐ Graph: AI performing personalized novelty ranking...")
+    logger.info("  ⭐ Graph: AI performing personalized novelty ranking...")
     
     # Load Profile for Nuance
     try:
@@ -82,7 +83,7 @@ Items:
         scores_list = json.loads(raw_content)
         score_map = {item['id']: item['score'] for item in scores_list}
     except Exception as e:
-        print(f"    ⚠️ Ranking LLM failed: {e}")
+        logger.warning(f"    ⚠️ Ranking LLM failed: {e}")
 
     ranked_final = {k: [] for k in state["raw_data"].keys()}
     for section, items in state["raw_data"].items():
@@ -90,17 +91,17 @@ Items:
         limit = 12 if section in ["arxiv", "github"] else 8
         ranked_final[section] = sorted_items[:limit]
 
-    print(f"    ✅ Ranking complete. Picks: {{k: len(v) for k, v in ranked_final.items()}}")
+    logger.info(f"    ✅ Ranking complete. Picks: {{k: len(v) for k, v in ranked_final.items()}}")
     return {"ranked_data": ranked_final}
 
 async def analyst_node(state: AgentState):
-    print(f"  🤖 Graph: Generating technical summaries (Attempt {state.get('iterations', 0) + 1})...")
+    logger.info(f"  🤖 Graph: Generating technical summaries (Attempt {state.get('iterations', 0) + 1})...")
     from src.summarizer import summarize_all
     from src.scraper import enrich_items
     
     ranked = state["ranked_data"]
     if state.get("iterations", 0) == 0:
-        print("    🔍 Scraping full text for top items...")
+        logger.info("    🔍 Scraping full text for top items...")
         ranked["news"]   = await enrich_items(ranked.get("news", []), max_scrape=8)
         ranked["github"] = await enrich_items(ranked.get("github", []), max_scrape=8)
     
@@ -108,7 +109,7 @@ async def analyst_node(state: AgentState):
     return {"summarized_data": summarized, "iterations": state.get("iterations", 0) + 1}
 
 async def critic_node(state: AgentState):
-    print("  ⚖️  Graph: Critic reviewing summaries...")
+    logger.info("  ⚖️  Graph: Critic reviewing summaries...")
     all_items = []
     for items in state["summarized_data"].values(): all_items.extend(items)
     if not all_items: return {"revision_needed": False}
@@ -118,13 +119,13 @@ async def critic_node(state: AgentState):
         if len(summary) < 60 or not any(kw in summary for kw in ["python", "library", "architecture", "model", "code"]):
             poor_quality += 1
     if poor_quality > (len(all_items) * 0.2) and state["iterations"] < 2:
-        print(f"    ⚠️ Critic requested revision for {poor_quality} items.")
+        logger.warning(f"    ⚠️ Critic requested revision for {poor_quality} items.")
         return {"revision_needed": True}
-    print("    ✅ Critic approved all summaries.")
+    logger.info("    ✅ Critic approved all summaries.")
     return {"revision_needed": False}
 
 async def synthesis_node(state: AgentState):
-    print("  ✍️ Graph: Synthesizing trends using Ph.D. level model (GPT-4o)...")
+    logger.info("  ✍️ Graph: Synthesizing trends using Ph.D. level model (GPT-4o)...")
     from src.summarizer import generate_executive_synthesis
     report, usage = await generate_executive_synthesis(state["summarized_data"], return_usage=True)
     

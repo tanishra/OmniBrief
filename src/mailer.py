@@ -1,9 +1,10 @@
+from __future__ import annotations
 """
 src/mailer.py
 Resend email delivery for confirmation, digest, and alert emails.
 """
 
-from __future__ import annotations
+from src.logger import logger
 
 import asyncio
 import os
@@ -44,7 +45,7 @@ async def _send_email(
         )
 
     if resp.status_code not in (200, 201):
-        print(f"❌ Resend error {resp.status_code}: {resp.text}")
+        logger.error(f"❌ Resend error {resp.status_code}: {resp.text}")
         resp.raise_for_status()
 
     return resp.json()
@@ -62,7 +63,7 @@ async def send_digest(html_content: str, recipient_email: str) -> Dict[str, Any]
         subject=build_digest_subject(),
         html_content=html_content,
     )
-    print(f"✅ Email sent to {recipient_email}. Resend ID: {data.get('id')}")
+    logger.info(f"✅ Email sent to {recipient_email}. Resend ID: {data.get('id')}")
     return data
 
 
@@ -88,7 +89,7 @@ async def send_confirmation_email(recipient_email: str, confirm_url: str) -> Dic
         subject="Confirm your OmniBrief subscription",
         html_content=html,
     )
-    print(f"✅ Confirmation email sent to {recipient_email}. Resend ID: {data.get('id')}")
+    logger.info(f"✅ Confirmation email sent to {recipient_email}. Resend ID: {data.get('id')}")
     return data
 
 
@@ -112,9 +113,9 @@ async def send_error_alert(error_message: str) -> None:
             subject=subject,
             html_content=html,
         )
-        print(f"⚠️  Error alert sent to {ADMIN_EMAIL}")
+        logger.warning(f"⚠️  Error alert sent to {ADMIN_EMAIL}")
     except Exception as e:
-        print(f"❌ Failed to send error alert: {e}")
+        logger.error(f"❌ Failed to send error alert: {e}")
 
 
 if __name__ == "__main__":

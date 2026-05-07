@@ -1,9 +1,10 @@
+from __future__ import annotations
 """
 src/persistence.py
 PostgreSQL-backed persistence for digest history, subscribers, tokens, and delivery logs.
 """
 
-from __future__ import annotations
+from src.logger import logger
 
 import hashlib
 import hmac
@@ -15,6 +16,7 @@ from urllib.parse import quote
 
 import psycopg
 from psycopg.rows import dict_row
+from typing import AsyncGenerator
 
 from config import (
     APP_BASE_URL,
@@ -26,6 +28,36 @@ from config import (
     UNSUBSCRIBE_TOKEN_TTL_DAYS,
 )
 
+
+from psycopg_pool import AsyncConnectionPool
+from contextlib import asynccontextmanager
+
+_async_pool: Optional[AsyncConnectionPool] = None
+
+async def init_async_pool():
+    global _async_pool
+    if _async_pool is None:
+        _async_pool = AsyncConnectionPool(
+            conninfo=DATABASE_URL,
+            min_size=1,
+            max_size=10,
+            timeout=30.0,
+            max_idle=300
+        )
+        await _async_pool.open()
+
+async def close_async_pool():
+    global _async_pool
+    if _async_pool is not None:
+        await _async_pool.close()
+        _async_pool = None
+
+@asynccontextmanager
+async def get_async_conn():
+    if _async_pool is None:
+        await init_async_pool()
+    async with _async_pool.connection() as conn:
+        yield conn
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -56,109 +88,36 @@ def get_conn(*, row_factory=None) -> Iterator[psycopg.Connection]:
         conn.close()
 
 
-def init_db() -> None:
-    """Initializes the PostgreSQL schema."""
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                CREATE TABLE IF NOT EXISTS sent_items (
-                    url TEXT PRIMARY KEY,
-                    title TEXT,
-                    source TEXT,
-                    section TEXT,
-                    sent_at TIMESTAMPTZ DEFAULT NOW()
-                )
-                """
-            )
-            cur.execute(
-                """
-                CREATE TABLE IF NOT EXISTS subscribers (
-                    id BIGSERIAL PRIMARY KEY,
-                    email TEXT NOT NULL UNIQUE,
-                    status TEXT NOT NULL CHECK (status IN ('pending', 'active', 'unsubscribed')),
-                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                    confirmed_at TIMESTAMPTZ,
-                    unsubscribed_at TIMESTAMPTZ
-                )
-                """
-            )
-            cur.execute(
-                """
-                CREATE TABLE IF NOT EXISTS subscriber_tokens (
-                    id BIGSERIAL PRIMARY KEY,
-                    subscriber_id BIGINT NOT NULL REFERENCES subscribers(id) ON DELETE CASCADE,
-                    purpose TEXT NOT NULL CHECK (purpose IN ('confirm', 'unsubscribe')),
-                    token_hash TEXT NOT NULL UNIQUE,
-                    expires_at TIMESTAMPTZ NOT NULL,
-                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                    used_at TIMESTAMPTZ
-                )
-                """
-            )
-            cur.execute(
-                """
-                CREATE TABLE IF NOT EXISTS delivery_logs (
-                    id BIGSERIAL PRIMARY KEY,
-                    subscriber_id BIGINT NOT NULL REFERENCES subscribers(id) ON DELETE CASCADE,
-                    campaign_key TEXT NOT NULL,
-                    resend_message_id TEXT,
-                    status TEXT NOT NULL CHECK (status IN ('sent', 'failed')),
-                    error TEXT,
-                    sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                    UNIQUE (subscriber_id, campaign_key)
-                )
-                """
-            )
-            cur.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_subscribers_status
-                ON subscribers (status)
-                """
-            )
-            cur.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_tokens_lookup
-                ON subscriber_tokens (purpose, token_hash, used_at, expires_at)
-                """
-            )
-            cur.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_delivery_campaign
-                ON delivery_logs (campaign_key, status)
-                """
-            )
-        conn.commit()
 
 
-def load_history() -> set[str]:
+
+async def load_history() -> set[str]:
     """Loads sent URLs into a set for fast lookup."""
-    init_db()
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT url FROM sent_items")
-            return {row[0] for row in cur.fetchall()}
+    async with get_async_conn() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute("SELECT url FROM sent_items")
+            return {row[0] for row in await cur.fetchall()}
 
 
-def is_duplicate(url: str, history_set: Optional[set[str]] = None) -> bool:
+async def is_duplicate(url: str, history_set: Optional[set[str]] = None) -> bool:
     """Checks if a URL has already been sent."""
     if not url:
         return False
     if history_set is not None and url in history_set:
         return True
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT 1 FROM sent_items WHERE url = %s", (url,))
-            return cur.fetchone() is not None
+    async with get_async_conn() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute("SELECT 1 FROM sent_items WHERE url = %s", (url,))
+            return await cur.fetchone() is not None
 
 
-def mark_sent(url: str, title: str = "", source: str = "", section: str = "") -> None:
+async def mark_sent(url: str, title: str = "", source: str = "", section: str = "") -> None:
     """Saves a digest item to the global sent history."""
     if not url:
         return
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
+    async with get_async_conn() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
                 """
                 INSERT INTO sent_items (url, title, source, section)
                 VALUES (%s, %s, %s, %s)
@@ -169,24 +128,24 @@ def mark_sent(url: str, title: str = "", source: str = "", section: str = "") ->
                 """,
                 (url, title, source, section),
             )
-        conn.commit()
+        await conn.commit()
 
 
-def cleanup_history(days: int = 14) -> None:
+async def cleanup_history(days: int = 14) -> None:
     """Removes old sent history entries."""
     cutoff = _utcnow() - timedelta(days=days)
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute("DELETE FROM sent_items WHERE sent_at < %s", (cutoff,))
-        conn.commit()
+    async with get_async_conn() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute("DELETE FROM sent_items WHERE sent_at < %s", (cutoff,))
+        await conn.commit()
 
 
-def cleanup_tokens(retention_days: int = 7) -> None:
+async def cleanup_tokens(retention_days: int = 7) -> None:
     """Removes expired or used tokens after a short retention period."""
     cutoff = _utcnow() - timedelta(days=retention_days)
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
+    async with get_async_conn() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
                 """
                 DELETE FROM subscriber_tokens
                 WHERE (used_at IS NOT NULL AND used_at < %s)
@@ -194,17 +153,17 @@ def cleanup_tokens(retention_days: int = 7) -> None:
                 """,
                 (cutoff, cutoff),
             )
-        conn.commit()
+        await conn.commit()
 
 
-def ensure_default_subscriber() -> None:
+async def ensure_default_subscriber() -> None:
     """Bootstraps the legacy recipient as an active subscriber for backwards compatibility."""
     if not BOOTSTRAP_RECIPIENT_AS_SUBSCRIBER or not RECIPIENT_EMAIL:
         return
     email = _normalize_email(RECIPIENT_EMAIL)
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
+    async with get_async_conn() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
                 """
                 INSERT INTO subscribers (email, status, confirmed_at)
                 VALUES (%s, 'active', NOW())
@@ -212,7 +171,7 @@ def ensure_default_subscriber() -> None:
                 """,
                 (email,),
             )
-        conn.commit()
+        await conn.commit()
 
 
 def _build_action_url(path: str, token: str) -> str:
@@ -220,39 +179,39 @@ def _build_action_url(path: str, token: str) -> str:
     return f"{base}{path}?token={quote(token)}"
 
 
-def _issue_token(subscriber_id: int, purpose: str, ttl: timedelta) -> str:
+async def _issue_token(subscriber_id: int, purpose: str, ttl: timedelta) -> str:
     raw_token = secrets.token_urlsafe(32)
     token_hash = _hash_token(raw_token)
     expires_at = _utcnow() + ttl
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
+    async with get_async_conn() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
                 """
                 INSERT INTO subscriber_tokens (subscriber_id, purpose, token_hash, expires_at)
                 VALUES (%s, %s, %s, %s)
                 """,
                 (subscriber_id, purpose, token_hash, expires_at),
             )
-        conn.commit()
+        await conn.commit()
     return raw_token
 
 
-def create_confirm_link(subscriber_id: int) -> str:
-    token = _issue_token(subscriber_id, "confirm", timedelta(hours=SUBSCRIBE_TOKEN_TTL_HOURS))
+async def create_confirm_link(subscriber_id: int) -> str:
+    token = await _issue_token(subscriber_id, "confirm", timedelta(hours=SUBSCRIBE_TOKEN_TTL_HOURS))
     return _build_action_url("/confirm", token)
 
 
-def create_unsubscribe_link(subscriber_id: int) -> str:
-    token = _issue_token(subscriber_id, "unsubscribe", timedelta(days=UNSUBSCRIBE_TOKEN_TTL_DAYS))
+async def create_unsubscribe_link(subscriber_id: int) -> str:
+    token = await _issue_token(subscriber_id, "unsubscribe", timedelta(days=UNSUBSCRIBE_TOKEN_TTL_DAYS))
     return _build_action_url("/unsubscribe", token)
 
 
-def upsert_pending_subscriber(email: str) -> Dict[str, Any]:
+async def upsert_pending_subscriber(email: str) -> Dict[str, Any]:
     """Creates or refreshes a pending subscriber while keeping active subscribers active."""
     normalized = _normalize_email(email)
-    with get_conn(row_factory=dict_row) as conn:
-        with conn.cursor() as cur:
-            cur.execute(
+    async with get_async_conn() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(
                 """
                 INSERT INTO subscribers (email, status)
                 VALUES (%s, 'pending')
@@ -269,16 +228,16 @@ def upsert_pending_subscriber(email: str) -> Dict[str, Any]:
                 """,
                 (normalized,),
             )
-            row = cur.fetchone()
-        conn.commit()
+            row = await cur.fetchone()
+        await conn.commit()
     return dict(row)
 
 
-def list_active_subscribers_for_campaign(campaign_key: str) -> List[Dict[str, Any]]:
+async def list_active_subscribers_for_campaign(campaign_key: str) -> List[Dict[str, Any]]:
     """Returns active subscribers who have not yet received the campaign."""
-    with get_conn(row_factory=dict_row) as conn:
-        with conn.cursor() as cur:
-            cur.execute(
+    async with get_async_conn() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(
                 """
                 SELECT s.id, s.email
                 FROM subscribers AS s
@@ -294,11 +253,11 @@ def list_active_subscribers_for_campaign(campaign_key: str) -> List[Dict[str, An
                 """,
                 (campaign_key,),
             )
-            rows = cur.fetchall()
+            rows = await cur.fetchall()
     return [dict(row) for row in rows]
 
 
-def record_delivery(
+async def record_delivery(
     subscriber_id: int,
     campaign_key: str,
     *,
@@ -306,9 +265,9 @@ def record_delivery(
     resend_message_id: Optional[str] = None,
     error: Optional[str] = None,
 ) -> None:
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
+    async with get_async_conn() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
                 """
                 INSERT INTO delivery_logs (subscriber_id, campaign_key, resend_message_id, status, error)
                 VALUES (%s, %s, %s, %s, %s)
@@ -320,15 +279,15 @@ def record_delivery(
                 """,
                 (subscriber_id, campaign_key, resend_message_id, status, error),
             )
-        conn.commit()
+        await conn.commit()
 
 
-def _consume_token(raw_token: str, purpose: str) -> Optional[Dict[str, Any]]:
+async def _consume_token(raw_token: str, purpose: str) -> Optional[Dict[str, Any]]:
     token_hash = _hash_token(raw_token)
     now = _utcnow()
-    with get_conn(row_factory=dict_row) as conn:
-        with conn.cursor() as cur:
-            cur.execute(
+    async with get_async_conn() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(
                 """
                 SELECT t.id AS token_id, t.subscriber_id, s.email, s.status, t.expires_at, t.used_at
                 FROM subscriber_tokens AS t
@@ -339,18 +298,18 @@ def _consume_token(raw_token: str, purpose: str) -> Optional[Dict[str, Any]]:
                 """,
                 (purpose, token_hash),
             )
-            row = cur.fetchone()
+            row = await cur.fetchone()
             if not row:
                 return None
             if row["used_at"] is not None or row["expires_at"] < now:
                 return None
 
-            cur.execute(
+            await cur.execute(
                 "UPDATE subscriber_tokens SET used_at = %s WHERE id = %s",
                 (now, row["token_id"]),
             )
             if purpose == "confirm":
-                cur.execute(
+                await cur.execute(
                     """
                     UPDATE subscribers
                     SET status = 'active',
@@ -362,7 +321,7 @@ def _consume_token(raw_token: str, purpose: str) -> Optional[Dict[str, Any]]:
                     (now, row["subscriber_id"]),
                 )
             else:
-                cur.execute(
+                await cur.execute(
                     """
                     UPDATE subscribers
                     SET status = 'unsubscribed',
@@ -372,14 +331,76 @@ def _consume_token(raw_token: str, purpose: str) -> Optional[Dict[str, Any]]:
                     """,
                     (now, row["subscriber_id"]),
                 )
-            updated = cur.fetchone()
-        conn.commit()
+            updated = await cur.fetchone()
+        await conn.commit()
     return dict(updated) if updated else None
 
 
-def confirm_subscriber(raw_token: str) -> Optional[Dict[str, Any]]:
-    return _consume_token(raw_token, "confirm")
+async def confirm_subscriber(raw_token: str) -> Optional[Dict[str, Any]]:
+    return await _consume_token(raw_token, "confirm")
 
 
-def unsubscribe_subscriber(raw_token: str) -> Optional[Dict[str, Any]]:
-    return _consume_token(raw_token, "unsubscribe")
+async def unsubscribe_subscriber(raw_token: str) -> Optional[Dict[str, Any]]:
+    return await _consume_token(raw_token, "unsubscribe")
+
+
+async def enforce_rate_limit(bucket: str, subject: str, limit: int, window_seconds: int) -> bool:
+    """
+    Returns True if allowed, False if rate limited.
+    """
+    key = f"{bucket}:{subject}"
+    cutoff = _utcnow() - timedelta(seconds=window_seconds)
+
+    async with get_async_conn() as conn:
+        async with conn.cursor() as cur:
+            # Clean up old entries for THIS key to save space over time
+            await cur.execute("DELETE FROM rate_limits WHERE key = %s AND timestamp < %s", (key, cutoff))
+
+            # Count recent requests
+            await cur.execute("SELECT COUNT(*) FROM rate_limits WHERE key = %s AND timestamp >= %s", (key, cutoff))
+            count = await cur.fetchone()[0]
+
+            if count >= limit:
+                await conn.commit()
+                return False
+
+            # Log new request
+            await cur.execute("INSERT INTO rate_limits (key, timestamp) VALUES (%s, %s)", (key, _utcnow()))
+            await conn.commit()
+            return True
+
+async def cleanup_rate_limits(days: int = 2) -> None:
+    """Prunes old rate limit data."""
+    cutoff = _utcnow() - timedelta(days=days)
+    async with get_async_conn() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute("DELETE FROM rate_limits WHERE timestamp < %s", (cutoff,))
+        await conn.commit()
+
+
+async def archive_newsletter(campaign_key: str, html_content: str) -> None:
+    async with get_async_conn() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                """
+                INSERT INTO newsletter_archives (campaign_key, html_content)
+                VALUES (%s, %s)
+                ON CONFLICT (campaign_key) DO NOTHING
+                """,
+                (campaign_key, html_content)
+            )
+        await conn.commit()
+
+async def record_feedback(campaign_key: str, subscriber_email: str, vote: str) -> None:
+    async with get_async_conn() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                """
+                INSERT INTO campaign_feedback (campaign_key, subscriber_email, vote)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (campaign_key, subscriber_email) DO UPDATE
+                SET vote = EXCLUDED.vote
+                """,
+                (campaign_key, subscriber_email, vote)
+            )
+        await conn.commit()
