@@ -12,6 +12,7 @@ env/
 .venv/
 
 # Project Specific
+bugs.md
 sent_history.json
 *.db
 *.db-journal
