@@ -199,14 +199,6 @@ The landing page will be available at:
 http://localhost:3000
 ```
 
-### 7. Local test flow
-Once everything is running:
-- open the frontend
-- submit an email
-- confirm the subscription from your inbox
-- run `python main.py`
-- verify delivery logs and sent history in PostgreSQL
-
 ---
 
 ## Contributing
