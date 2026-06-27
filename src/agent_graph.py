@@ -91,7 +91,8 @@ Items:
         limit = 12 if section in ["arxiv", "github"] else 8
         ranked_final[section] = sorted_items[:limit]
 
-    logger.info(f"    ✅ Ranking complete. Picks: {{k: len(v) for k, v in ranked_final.items()}}")
+    picks = {k: len(v) for k, v in ranked_final.items()}
+    logger.info(f"    ✅ Ranking complete. Picks: {picks}")
     return {"ranked_data": ranked_final}
 
 async def analyst_node(state: AgentState):
