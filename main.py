@@ -157,8 +157,6 @@ async def run() -> None:
         logger.info("📭 No new unique items found. Skipping email.")
         return
 
-    from datetime import datetime
-
     campaign_key = datetime.now().strftime("%Y-%m-%d")
     subscribers = list_active_subscribers_for_campaign(campaign_key)
     if not subscribers:
