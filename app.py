@@ -121,8 +121,8 @@ async def healthz() -> dict:
 @app.post("/subscribe")
 async def subscribe(payload: SubscribeRequest, request: Request) -> dict:
     client_ip = _get_client_ip(request)
-    _enforce_rate_limit("subscribe_ip", client_ip)
     _enforce_rate_limit("subscribe_email", payload.email.lower())
+    _enforce_rate_limit("subscribe_ip", client_ip)
     
     subscriber = upsert_pending_subscriber(payload.email)
     
