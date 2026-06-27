@@ -205,16 +205,7 @@ Go beyond the headline. Explain the technical "why" or the strategic impact."""
             ],
         }
 
-        try:
-            summary = await _do_openai_call(client, payload)
-        except Exception as e:
-            logger.warning(f"Summarizer failed after retries: {e}")
-            summary = (
-                item.get("abstract")
-                or item.get("summary")
-                or item.get("description")
-                or "Summary unavailable."
-            )[:250]
+        summary = await _do_openai_call(client, payload)
 
         return {**item, "ai_summary": summary}
 
