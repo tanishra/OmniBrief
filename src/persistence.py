@@ -243,11 +243,13 @@ def ensure_default_subscriber() -> None:
     email = _normalize_email(RECIPIENT_EMAIL)
     with get_conn() as conn:
         with conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM subscribers WHERE email = %s", (email,))
+            if cur.fetchone():
+                return
             cur.execute(
                 """
                 INSERT INTO subscribers (email, status, confirmed_at)
                 VALUES (%s, 'active', NOW())
-                ON CONFLICT (email) DO NOTHING
                 """,
                 (email,),
             )
