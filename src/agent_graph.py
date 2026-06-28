@@ -6,10 +6,15 @@ V7.2: LLM-based Ranking, Routing, and Cost Tracking.
 """
 
 import json
+import os
 from typing import List, Dict, Any, TypedDict
 from langgraph.graph import StateGraph, END
 from langchain_openai import ChatOpenAI
-from config import OPENAI_API_KEY
+from config import (
+    OPENAI_API_KEY,
+    HN_MAX_ITEMS, ARXIV_MAX_ITEMS, GITHUB_TRENDING_MAX,
+    PRODUCTHUNT_MAX, REDDIT_MAX_ITEMS,
+)
 from src.cost_tracker import tracker
 
 class AgentState(TypedDict):
@@ -40,8 +45,9 @@ async def ranking_node(state: AgentState):
     logger.info("  ⭐ Graph: AI performing personalized novelty ranking...")
     
     # Load Profile for Nuance
+    profile_path = os.path.join(os.path.dirname(__file__), "..", "PROFILE.md")
     try:
-        with open("PROFILE.md", "r") as f:
+        with open(profile_path, "r") as f:
             profile_content = f.read()
     except Exception:
         profile_content = "Prioritize innovative AI research and Python code."
@@ -88,7 +94,11 @@ Items:
     ranked_final = {k: [] for k in state["raw_data"].keys()}
     for section, items in state["raw_data"].items():
         sorted_items = sorted(items, key=lambda x: score_map.get(x.get("url"), 0), reverse=True)
-        limit = 12 if section in ["arxiv", "github"] else 8
+        section_limit = {
+            "hn": HN_MAX_ITEMS, "arxiv": ARXIV_MAX_ITEMS, "github": GITHUB_TRENDING_MAX,
+            "ph": PRODUCTHUNT_MAX, "reddit": REDDIT_MAX_ITEMS,
+        }
+        limit = section_limit.get(section, 8)
         ranked_final[section] = sorted_items[:limit]
 
     picks = {k: len(v) for k, v in ranked_final.items()}
@@ -139,7 +149,7 @@ async def synthesis_node(state: AgentState):
 def should_continue(state: AgentState):
     return "analyze" if state.get("revision_needed") else "synthesize"
 
-def create_graph(checkpointer=None):
+def _build_graph(checkpointer=None):
     workflow = StateGraph(AgentState)
     workflow.add_node("curate", curation_node)
     workflow.add_node("rank", ranking_node)
@@ -153,3 +163,11 @@ def create_graph(checkpointer=None):
     workflow.add_conditional_edges("criticize", should_continue, {"analyze": "analyze", "synthesize": "synthesize"})
     workflow.add_edge("synthesize", END)
     return workflow.compile(checkpointer=checkpointer)
+
+# Module-level singleton — compiled once at import time
+graph = _build_graph()
+
+def create_graph(checkpointer=None):
+    if checkpointer:
+        return _build_graph(checkpointer=checkpointer)
+    return graph
