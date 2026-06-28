@@ -182,7 +182,7 @@ async def contact(payload: ContactRequest, request: Request) -> dict:
     try:
         await _send_email(
             to_email=ADMIN_EMAIL,
-            subject=f"Inquiry: {payload.name} via OmniBrief",
+            subject=f"Inquiry: {html.escape(payload.name)} via OmniBrief",
             html_content=html_email,
         )
         return {"message": "Message sent successfully."}
