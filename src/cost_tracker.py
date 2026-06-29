@@ -5,8 +5,6 @@ Tracks token usage and estimated cost for OpenAI calls.
 Prices for GPT-4o and GPT-4o-mini (as of 2024/2025).
 """
 
-import json
-
 # Prices per 1M tokens (USD)
 PRICES = {
     "gpt-4o-mini": {"input": 0.15, "output": 0.60},
