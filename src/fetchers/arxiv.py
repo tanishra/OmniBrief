@@ -30,11 +30,12 @@ async def fetch_arxiv(categories: List[str], max_items: int = 8) -> List[Dict[st
     async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
         for batch in batches:
             cat_query = " OR ".join(f"cat:{c}" for c in batch)
+            per_batch = max(1, max_items * len(batch) // len(categories))
             params = {
                 "search_query": cat_query,
                 "sortBy":       "submittedDate",
                 "sortOrder":    "descending",
-                "max_results":  max_items,
+                "max_results":  per_batch,
             }
 
             for attempt in range(3):
