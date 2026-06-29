@@ -28,7 +28,7 @@ from src.fetchers.rss_feeds       import fetch_rss_feeds
 from src.fetchers.producthunt     import fetch_producthunt
 from src.fetchers.reddit          import fetch_reddit
 from src.renderer                 import render_digest
-from src.mailer                   import send_digest
+from src.mailer                   import send_digest, send_error_alert
 from src.persistence              import (
     cleanup_rate_limits,
     cleanup_history,
@@ -252,6 +252,7 @@ async def main() -> None:
         await run()
     except Exception as e:
         logger.error(f"\n❌ Fatal error:\n{traceback.format_exc()}")
+        await send_error_alert(traceback.format_exc())
         sys.exit(1)
 
 if __name__ == "__main__":
