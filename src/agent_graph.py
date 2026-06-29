@@ -127,7 +127,7 @@ async def critic_node(state: AgentState):
     poor_quality = 0
     for item in all_items:
         summary = item.get("ai_summary", "").lower()
-        if len(summary) < 60 or not any(kw in summary for kw in ["python", "library", "architecture", "model", "code"]):
+        if len(summary) < 60 or not any(kw in summary for kw in ["introduc", "propos", "method", "approach", "framework", "technique", "system", "model", "architecture", "algorithm", "dataset", "experiment", "result", "achieve", "outperform"]):
             poor_quality += 1
     if poor_quality > (len(all_items) * 0.2) and state["iterations"] < 2:
         logger.warning(f"    ⚠️ Critic requested revision for {poor_quality} items.")
