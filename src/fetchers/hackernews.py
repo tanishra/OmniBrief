@@ -21,7 +21,6 @@ AI_KEYWORDS = [
     "reinforcement learning", "rlhf", "alignment",
 ]
 
-HN_API_BASE = "https://hacker-news.firebaseio.com/v0"
 HN_ALGOLIA  = "https://hn.algolia.com/api/v1/search"
 
 
