@@ -1,2 +1,3 @@
 from src.logger import logger
-# ── src/__init__.py ───────────────────────────────────────────────────────────
+
+__all__: list[str] = []
