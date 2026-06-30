@@ -1,6 +1,7 @@
 from src.logger import logger
 import re
 from typing import List, Dict, Any
+from urllib.parse import urlparse, urlunparse
 
 def get_tokens(text: str) -> set:
     text = re.sub(r'[^a-z0-9\s]', '', text.lower())
@@ -16,6 +17,10 @@ def similarity(a: str, b: str) -> float:
     union = tokens_a.union(tokens_b)
     return len(intersection) / len(union)
 
+def normalize_url(url: str) -> str:
+    parsed = urlparse(url)
+    return urlunparse((parsed.scheme, parsed.netloc, parsed.path, None, None, None))
+
 def deduplicate_and_correlate(data: Dict[str, List[Dict]]) -> Dict[str, List[Dict]]:
     """
     1. Deduplicates titles across sources.
@@ -23,6 +28,7 @@ def deduplicate_and_correlate(data: Dict[str, List[Dict]]) -> Dict[str, List[Dic
     """
     clean_data = {k: [] for k in data.keys()}
     seen_titles_tokens = []
+    seen_urls = set()
     
     # Priority order for 'primary' versions
     sections = ["arxiv", "github", "hn", "news", "ph", "reddit"]
@@ -51,7 +57,12 @@ def deduplicate_and_correlate(data: Dict[str, List[Dict]]) -> Dict[str, List[Dic
                     break
 
             if is_dupe: continue
-            
+
+            norm_url = normalize_url(item.get("url") or "")
+            if norm_url and norm_url in seen_urls:
+                continue
+            seen_urls.add(norm_url)
+
             # Fix 3: Cross-Source Correlation (Link Paper to Code)
             if section == "arxiv":
                 # Look for repo implementation in abstract
