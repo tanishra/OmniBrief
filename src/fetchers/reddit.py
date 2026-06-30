@@ -71,7 +71,7 @@ async def fetch_reddit(
                         if not any(kw in title_lower for kw in AI_KEYWORDS):
                             continue
 
-                    if score < 50:
+                    if score < 10:
                         continue
 
                     seen_urls.add(link)
