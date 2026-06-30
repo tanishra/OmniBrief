@@ -7,14 +7,10 @@ Resend email delivery for confirmation, digest, and alert emails.
 from src.logger import logger
 
 import asyncio
-import os
-import sys
 from datetime import datetime
 from typing import Any, Dict, Optional
 
 import httpx
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from config import ADMIN_EMAIL, RESEND_API_KEY, SENDER_EMAIL, SENDER_NAME
 

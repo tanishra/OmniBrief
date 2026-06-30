@@ -5,10 +5,7 @@ import re
 import asyncio
 import httpx
 from typing import List, Dict, Any, Tuple
-import sys
-import os
 import secrets
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from config import OPENAI_API_KEY, OPENAI_MODEL, OPENAI_MAX_TOKENS, OPENAI_TEMPERATURE
 from src.cost_tracker import tracker
 

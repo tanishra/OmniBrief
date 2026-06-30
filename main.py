@@ -6,9 +6,6 @@ main.py — OmniBrief Orchestrator (V6.0 Agentic Engine)
 import asyncio
 import traceback
 import sys
-import os
-
-sys.path.insert(0, os.path.dirname(__file__))
 
 from config import (
     APP_BASE_URL,

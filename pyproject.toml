@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "omnibrief"
+version = "6.0.0"
+description = "Daily AI research digest aggregator"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx",
+    "beautifulsoup4",
+    "playwright",
+    "tenacity",
+    "fastapi",
+    "uvicorn",
+    "feedparser",
+    "jinja2",
+    "psycopg",
+    "psycopg-pool",
+    "langgraph",
+    "langchain-openai",
+    "python-multipart",
+    "pydantic",
+    "python-dotenv",
+    "email_validator",
+    "tiktoken",
+]
+
+[tool.setuptools.packages.find]
+include = ["src*"]

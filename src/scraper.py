@@ -44,7 +44,8 @@ def _resolve_and_check_safe(url: str) -> Optional[str]:
                     return None
                 return str(ip) # Return first resolved safe IP
         except socket.gaierror:
-            return None
+            logger.warning(f"  ⚠️ DNS transient failure for {hostname}, allowing through")
+            return hostname
 
     except Exception:
         return None
@@ -147,7 +148,8 @@ async def _resolve_and_check_safe_async(url: str) -> Optional[str]:
                     return None
                 return str(ip)
         except socket.gaierror:
-            return None
+            logger.warning(f"  ⚠️ DNS transient failure for {hostname}, allowing through")
+            return hostname
 
     except Exception:
         return None
