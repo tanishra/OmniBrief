@@ -1,0 +1,19 @@
+# Conventional Commits for OmniBrief
+#
+# <type>: <short description>
+#
+# Types:
+#   fix:     Bug fix
+#   feat:    New feature
+#   chore:   Maintenance, config, deps
+#   refactor: Code change with no functional change
+#   docs:    Documentation only
+#   perf:    Performance improvement
+#   test:    Adding or fixing tests
+#   style:   Formatting, missing semicolons, etc.
+#
+# Examples:
+#   fix: handle dns transient failure in ssrf check
+#   feat: add url normalization to dedup
+#   chore: add pyproject.toml for pip install -e . support
+#
