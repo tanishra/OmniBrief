@@ -11,8 +11,6 @@ from src.cost_tracker import tracker
 
 OPENAI_URL = "https://api.openai.com/v1/chat/completions"
 
-from tenacity import retry, stop_after_attempt, wait_exponential
-
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
 async def _do_openai_call(client: httpx.AsyncClient, payload: dict) -> str:
     resp = await client.post(
@@ -206,6 +204,17 @@ Go beyond the headline. Explain the technical "why" or the strategic impact."""
 
         return {**item, "ai_summary": summary}
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+async def _do_synthesis_call(client: httpx.AsyncClient, payload: dict) -> dict:
+    resp = await client.post(
+        OPENAI_URL,
+        json=payload,
+        headers={"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"},
+        timeout=40,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
 async def generate_executive_synthesis(summarized_data: Dict[str, List[Dict]], return_usage: bool = False) -> Any:
     """
     Analyzes all summaries and generates a 1-2 paragraph daily trend report.
@@ -234,19 +243,12 @@ async def generate_executive_synthesis(summarized_data: Dict[str, List[Dict]], r
 
     try:
         async with httpx.AsyncClient() as client:
-            resp = await client.post(
-                OPENAI_URL,
-                json=payload,
-                headers={"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"},
-                timeout=40
-            )
-            resp.raise_for_status()
-            data = resp.json()
+            data = await _do_synthesis_call(client, payload)
             report = data["choices"][0]["message"]["content"].strip()
             usage = data.get("usage")
             return (report, usage) if return_usage else report
     except Exception as e:
-        logger.warning(f"  ⚠️ Synthesis failed: {e}")
+        logger.warning(f"  ⚠️ Synthesis failed after retries: {e}")
         return ("Intelligence engine was unable to synthesize a trend report.", None) if return_usage else "Intelligence engine failed."
 
 async def summarize_all(digest_data: Dict[str, List[Dict]]) -> Dict[str, List[Dict]]:
