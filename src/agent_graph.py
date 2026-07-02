@@ -28,7 +28,6 @@ class AgentState(TypedDict):
 
 # Intelligence Routing
 cheap_llm = ChatOpenAI(api_key=OPENAI_API_KEY, model="gpt-4o-mini", temperature=0)
-smart_llm = ChatOpenAI(api_key=OPENAI_API_KEY, model="gpt-4o", temperature=0.3)
 
 # ─── NODES ──────────────────────────────────────────────────────────────────
 
