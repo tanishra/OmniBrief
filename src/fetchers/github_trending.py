@@ -50,7 +50,7 @@ async def fetch_github_trending(
                                 seen_urls.add(url)
                                 all_repos.append(_format_repo(item, strategy))
                 except Exception: continue
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(1.0)
 
         # Strategy 3: Authority Scout (Top Labs)
         if organizations:
@@ -68,7 +68,7 @@ async def fetch_github_trending(
                                 seen_urls.add(url)
                                 all_repos.append(_format_repo(item, "authority"))
                 except Exception: continue
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(1.0)
 
     # Final Sort: Prioritize Authority and Innovation over just raw Stars
     def rank_score(r):
