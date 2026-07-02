@@ -16,6 +16,7 @@ from urllib.parse import quote
 
 import psycopg
 from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
 from config import (
     APP_BASE_URL,
@@ -26,6 +27,23 @@ from config import (
     SUBSCRIBE_TOKEN_TTL_HOURS,
     UNSUBSCRIBE_TOKEN_TTL_DAYS,
 )
+
+
+_pool: ConnectionPool | None = None
+
+
+def _get_pool() -> ConnectionPool:
+    global _pool
+    if _pool is None:
+        _pool = ConnectionPool(DATABASE_URL, min_size=1, max_size=10)
+    return _pool
+
+
+def close_pool() -> None:
+    global _pool
+    if _pool is not None:
+        _pool.close()
+        _pool = None
 
 
 def _utcnow() -> datetime:
@@ -50,11 +68,13 @@ def _hash_token(raw_token: str) -> str:
 def get_conn(*, row_factory=None) -> Iterator[psycopg.Connection]:
     if not DATABASE_URL:
         raise EnvironmentError("Missing required environment variable: DATABASE_URL")
-    conn = psycopg.connect(DATABASE_URL, row_factory=row_factory)
+    pool = _get_pool()
+    conn = pool.getconn()
     try:
+        conn.row_factory = row_factory
         yield conn
     finally:
-        conn.close()
+        pool.putconn(conn)
 
 
 def init_db() -> None:
