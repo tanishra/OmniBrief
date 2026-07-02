@@ -22,4 +22,5 @@ services:
       - .env
     profiles:
       - worker
+    restart: unless-stopped
     command: python main.py
