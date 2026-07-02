@@ -1,5 +1,7 @@
 FROM python:3.11-slim
 
+ARG INSTALL_PLAYWRIGHT=true
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
@@ -15,7 +17,7 @@ RUN apt-get update \
         ca-certificates \
     && pip install --upgrade pip \
     && pip install -r requirements.txt \
-    && playwright install --with-deps chromium \
+    && if [ "$INSTALL_PLAYWRIGHT" = "true" ]; then playwright install --with-deps chromium; fi \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
