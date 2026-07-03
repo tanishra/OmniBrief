@@ -50,6 +50,8 @@ def deduplicate_and_correlate(data: Dict[str, List[Dict]]) -> Dict[str, List[Dic
             for seen_tokens in seen_titles_tokens:
                 if not title_tokens or not seen_tokens:
                     continue
+                if len(title_tokens) > len(seen_tokens) * 5 or len(seen_tokens) > len(title_tokens) * 5:
+                    continue
                 intersection = title_tokens.intersection(seen_tokens)
                 union = title_tokens.union(seen_tokens)
                 if union and len(intersection) / len(union) > 0.65: # Adjusted threshold for Jaccard
