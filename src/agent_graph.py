@@ -88,7 +88,14 @@ Items:
         scores_list = json.loads(raw_content)
         score_map = {item['id']: item['score'] for item in scores_list}
     except Exception as e:
-        logger.warning(f"    ⚠️ Ranking LLM failed: {e}")
+        logger.warning(f"    ⚠️ Ranking LLM failed, falling back to heuristic: {e}")
+
+    # Heuristic fallback for unranked items (stars/score/votes)
+    for section, items in state["raw_data"].items():
+        for item in items:
+            url = item.get("url")
+            if url and url not in score_map:
+                score_map[url] = item.get("stars", 0) or item.get("score", 0) or item.get("votes", 0) or 0
 
     ranked_final = {k: [] for k in state["raw_data"].keys()}
     for section, items in state["raw_data"].items():
