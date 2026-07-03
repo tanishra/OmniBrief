@@ -179,6 +179,16 @@ async def run() -> None:
     except Exception as e:
         logger.error(f"  ⚠️ Failed to archive newsletter: {e}")
 
+    # Commit to history BEFORE sending — crash after this won't re-send
+    for section, items in summarized.items():
+        for item in items:
+            mark_sent(
+                item.get("url", ""),
+                title=item.get("title") or item.get("name", ""),
+                source=item.get("source", ""),
+                section=section,
+            )
+
     semaphore = asyncio.Semaphore(MAX_BROADCAST_CONCURRENCY)
 
 
@@ -221,16 +231,6 @@ async def run() -> None:
     logger.info(f"📬 Broadcast complete: {sent_count} sent, {failed_count} failed.")
     if sent_count == 0:
         raise RuntimeError("Digest generation completed, but delivery failed for all subscribers.")
-    
-    # Commit to history
-    for section, items in summarized.items():
-        for item in items:
-            mark_sent(
-                item.get("url", ""),
-                title=item.get("title") or item.get("name", ""),
-                source=item.get("source", ""),
-                section=section,
-            )
     
     cleanup_history()
     cleanup_rate_limits()
