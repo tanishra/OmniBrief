@@ -113,12 +113,12 @@ def _action_page(request: Request, title: str, message: str, action: str, button
     )
 
 
-@app.get("/healthz")
+@app.get("/healthz", tags=["health"])
 async def healthz() -> dict:
     return {"status": "ok"}
 
 
-@app.post("/subscribe")
+@app.post("/subscribe", tags=["subscription"])
 async def subscribe(payload: SubscribeRequest, request: Request) -> dict:
     client_ip = _get_client_ip(request)
     _enforce_rate_limit("subscribe_email", payload.email.lower())
@@ -139,7 +139,7 @@ async def subscribe(payload: SubscribeRequest, request: Request) -> dict:
     }
 
 
-@app.post("/contact")
+@app.post("/contact", tags=["contact"])
 async def contact(payload: ContactRequest, request: Request) -> dict:
     client_ip = _get_client_ip(request)
     _enforce_rate_limit("contact_ip", client_ip)
@@ -190,7 +190,7 @@ async def contact(payload: ContactRequest, request: Request) -> dict:
         raise HTTPException(status_code=500, detail="Failed to send message.")
 
 
-@app.get("/confirm", response_class=HTMLResponse)
+@app.get("/confirm", response_class=HTMLResponse, tags=["subscription"])
 async def confirm_page(request: Request, token: str) -> HTMLResponse:
     return _action_page(
         request,
@@ -202,7 +202,7 @@ async def confirm_page(request: Request, token: str) -> HTMLResponse:
     )
 
 
-@app.post("/confirm", response_class=HTMLResponse)
+@app.post("/confirm", response_class=HTMLResponse, tags=["subscription"])
 async def confirm(request: Request, token: str = Form(...)) -> HTMLResponse:
     _enforce_rate_limit("confirm_ip", _get_client_ip(request))
     subscriber = confirm_subscriber(token)
@@ -219,7 +219,7 @@ async def confirm(request: Request, token: str = Form(...)) -> HTMLResponse:
     )
 
 
-@app.get("/unsubscribe", response_class=HTMLResponse)
+@app.get("/unsubscribe", response_class=HTMLResponse, tags=["subscription"])
 async def unsubscribe_page(request: Request, token: str) -> HTMLResponse:
     return _action_page(
         request,
@@ -231,7 +231,7 @@ async def unsubscribe_page(request: Request, token: str) -> HTMLResponse:
     )
 
 
-@app.post("/unsubscribe", response_class=HTMLResponse)
+@app.post("/unsubscribe", response_class=HTMLResponse, tags=["subscription"])
 async def unsubscribe(request: Request, token: str = Form(...)) -> HTMLResponse:
     _enforce_rate_limit("unsubscribe_ip", _get_client_ip(request))
     subscriber = unsubscribe_subscriber(token)
@@ -257,7 +257,7 @@ def _generate_feedback_hmac(campaign_key: str, email: str, vote: str) -> str:
     signature = hmac.new(NEWSLETTER_TOKEN_SECRET.encode('utf-8'), message, hashlib.sha256).hexdigest()
     return signature
 
-@app.get("/feedback", response_class=HTMLResponse)
+@app.get("/feedback", response_class=HTMLResponse, tags=["feedback"])
 async def feedback(request: Request, campaign: str, email: str, vote: str, sig: str) -> HTMLResponse:
     expected_sig = _generate_feedback_hmac(campaign, email, vote)
     if not hmac.compare_digest(expected_sig, sig):
