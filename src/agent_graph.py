@@ -9,6 +9,7 @@ import json
 import os
 from typing import List, Dict, Any, TypedDict
 from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.memory import MemorySaver
 from langchain_openai import ChatOpenAI
 from config import (
     OPENAI_API_KEY,
@@ -170,8 +171,8 @@ def _build_graph(checkpointer=None):
     workflow.add_edge("synthesize", END)
     return workflow.compile(checkpointer=checkpointer)
 
-# Module-level singleton — compiled once at import time
-graph = _build_graph()
+# Module-level singleton — compiled once at import time with memory
+graph = _build_graph(checkpointer=MemorySaver())
 
 def create_graph(checkpointer=None):
     if checkpointer:
