@@ -25,6 +25,7 @@ dependencies = [
     "python-dotenv",
     "email_validator",
     "tiktoken",
+    "apscheduler",
 ]
 
 [tool.setuptools.packages.find]

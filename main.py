@@ -252,5 +252,20 @@ async def main() -> None:
         await send_error_alert(traceback.format_exc())
         sys.exit(1)
 
+def run_scheduled():
+    from apscheduler.schedulers.asyncio import AsyncIOScheduler
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(run, "cron", hour=8, minute=0, id="daily_brief")
+    scheduler.start()
+    logger.info("⏰ Scheduler started. Daily pipeline at 08:00.")
+    try:
+        asyncio.get_event_loop().run_forever()
+    except KeyboardInterrupt:
+        logger.info("Scheduler stopped.")
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    import sys
+    if "--once" in sys.argv:
+        asyncio.run(main())
+    else:
+        run_scheduled()
