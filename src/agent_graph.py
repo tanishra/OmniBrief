@@ -26,6 +26,7 @@ class AgentState(TypedDict):
     health_stats: Dict[str, str]
     revision_needed: bool
     iterations: int
+    flagged_items: List[str]
 
 # Intelligence Routing
 cheap_llm = ChatOpenAI(api_key=OPENAI_API_KEY, model="gpt-4o-mini", temperature=0)
@@ -118,29 +119,43 @@ async def analyst_node(state: AgentState):
     from src.scraper import enrich_items
     
     ranked = state["ranked_data"]
-    if state.get("iterations", 0) == 0:
+    flagged = state.get("flagged_items", [])
+    iterations = state.get("iterations", 0)
+    
+    if iterations == 0:
         logger.info("    🔍 Scraping full text for top items...")
         ranked["news"]   = await enrich_items(ranked.get("news", []), max_scrape=8)
         ranked["github"] = await enrich_items(ranked.get("github", []), max_scrape=8)
     
+    if iterations > 0 and flagged:
+        flagged_set = set(flagged)
+        prev = state["summarized_data"]
+        to_rerun = {s: [i for i in items if i.get("url") in flagged_set] for s, items in ranked.items()}
+        kept = {s: [i for i in items if i.get("url") not in flagged_set] for s, items in prev.items()}
+        new_summaries = await summarize_all(to_rerun)
+        merged = {}
+        for s in set(list(kept.keys()) + list(new_summaries.keys())):
+            merged[s] = kept.get(s, []) + new_summaries.get(s, [])
+        return {"summarized_data": merged, "iterations": iterations + 1}
+    
     summarized = await summarize_all(ranked)
-    return {"summarized_data": summarized, "iterations": state.get("iterations", 0) + 1}
+    return {"summarized_data": summarized, "iterations": iterations + 1}
 
 async def critic_node(state: AgentState):
     logger.info("  ⚖️  Graph: Critic reviewing summaries...")
     all_items = []
     for items in state["summarized_data"].values(): all_items.extend(items)
-    if not all_items: return {"revision_needed": False}
-    poor_quality = 0
+    if not all_items: return {"revision_needed": False, "flagged_items": []}
+    poor_quality = []
     for item in all_items:
         summary = item.get("ai_summary", "").lower()
         if len(summary) < 60 or not any(kw in summary for kw in ["introduc", "propos", "method", "approach", "framework", "technique", "system", "model", "architecture", "algorithm", "dataset", "experiment", "result", "achieve", "outperform"]):
-            poor_quality += 1
-    if poor_quality > (len(all_items) * 0.2) and state["iterations"] < 2:
-        logger.warning(f"    ⚠️ Critic requested revision for {poor_quality} items.")
-        return {"revision_needed": True}
+            poor_quality.append(item.get("url", ""))
+    if poor_quality and state["iterations"] < 2:
+        logger.warning(f"    ⚠️ Critic requested revision for {len(poor_quality)} items.")
+        return {"revision_needed": True, "flagged_items": poor_quality}
     logger.info("    ✅ Critic approved all summaries.")
-    return {"revision_needed": False}
+    return {"revision_needed": False, "flagged_items": []}
 
 async def synthesis_node(state: AgentState):
     logger.info("  ✍️ Graph: Synthesizing trends using Ph.D. level model (GPT-4o)...")
