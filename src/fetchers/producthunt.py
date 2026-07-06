@@ -2,65 +2,68 @@ from src.logger import logger
 """
 src/fetchers/producthunt.py
 Fetches top AI products launched on ProductHunt via their RSS feed.
-No API key needed.
+Uses httpx + xml.etree.ElementTree — no feedparser dependency.
 """
 
 import asyncio
-import feedparser
-from concurrent.futures import ThreadPoolExecutor
-from typing import List, Dict, Any
 import re
+import xml.etree.ElementTree as ET
+from typing import List, Dict, Any
+
+import httpx
 
 PRODUCTHUNT_RSS = "https://www.producthunt.com/feed?category=artificial-intelligence"
 
 
-def _parse_producthunt() -> List[Dict[str, Any]]:
-    """Parses the ProductHunt AI RSS feed synchronously."""
-    feed  = feedparser.parse(PRODUCTHUNT_RSS)
-    items = []
-
-    for entry in feed.entries:
-        title   = entry.get("title", "").strip()
-        url     = entry.get("link", "")
-        summary = entry.get("summary", "") or entry.get("description", "")
-
-        # Strip HTML
-        summary = re.sub(r"<[^>]+>", "", summary).strip()
-        if len(summary) > 300:
-            summary = summary[:300] + "..."
-
-        if not title or not url:
-            continue
-
-        published = ""
-        if hasattr(entry, "published"):
-            published = entry.published[:10] if entry.published else ""
-
-        # Extract vote count if available in title (PH sometimes includes it)
-        votes = 0
-        vote_match = re.search(r"\((\d+)\s*votes?\)", title, re.IGNORECASE)
-        if vote_match:
-            votes = int(vote_match.group(1))
-            title = title.replace(vote_match.group(0), "").strip()
-
-        items.append({
-            "title":     title,
-            "url":       url,
-            "summary":   summary,
-            "votes":     votes,
-            "published": published,
-            "source":    "ProductHunt",
-        })
-
-    return items
-
-
 async def fetch_producthunt(max_items: int = 5) -> List[Dict[str, Any]]:
-    """Async wrapper around the sync feedparser call."""
-    loop = asyncio.get_event_loop()
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        items = await loop.run_in_executor(executor, _parse_producthunt)
-    return items[:max_items]
+    """Fetches and parses the ProductHunt AI RSS feed asynchronously."""
+    try:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+            resp = await client.get(PRODUCTHUNT_RSS)
+            resp.raise_for_status()
+
+        root = ET.fromstring(resp.text)
+        channel = root.find("channel")
+        entries = channel.findall("item") if channel is not None else []
+        items = []
+
+        for entry in entries[:max_items]:
+            title = _tag_text(entry, "title")
+            url = _tag_text(entry, "link")
+            description = _tag_text(entry, "description")
+            published = _tag_text(entry, "pubDate")[:10] if _tag_text(entry, "pubDate") else ""
+
+            if not title or not url:
+                continue
+
+            description = re.sub(r"<[^>]+>", "", description).strip()
+            if len(description) > 300:
+                description = description[:300] + "..."
+
+            votes = 0
+            vote_match = re.search(r"\((\d+)\s*votes?\)", title, re.IGNORECASE)
+            if vote_match:
+                votes = int(vote_match.group(1))
+                title = title.replace(vote_match.group(0), "").strip()
+
+            items.append({
+                "title":     title,
+                "url":       url,
+                "summary":   description,
+                "votes":     votes,
+                "published": published,
+                "source":    "ProductHunt",
+            })
+
+        return items
+    except Exception as e:
+        logger.warning(f"  ⚠️  Error fetching ProductHunt: {e}")
+        return []
+
+
+def _tag_text(parent: ET.Element, tag: str) -> str:
+    el = parent.find(tag)
+    return el.text.strip() if el is not None and el.text else ""
 
 
 if __name__ == "__main__":
