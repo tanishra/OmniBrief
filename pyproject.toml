@@ -42,3 +42,9 @@ extend-exclude = ["*.html"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "N"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+filterwarnings = ["ignore::DeprecationWarning"]
