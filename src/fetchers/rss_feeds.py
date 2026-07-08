@@ -60,7 +60,9 @@ async def _parse_single_feed(feed_config: Dict, max_items: int) -> List[Dict[str
 
 def _tag_text(parent: ET.Element, tag: str) -> str:
     el = parent.find(tag)
-    return el.text.strip() if el is not None and el.text else ""
+    if el is None:
+        return ""
+    return "".join(el.itertext()).strip()
 
 
 def _make_item(title: str, url: str, description: str, source: str, category: str, published: str) -> Dict[str, Any] | None:
