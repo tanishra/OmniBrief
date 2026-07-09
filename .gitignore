@@ -22,3 +22,4 @@ previews/
 *.pem
 frontend/node_modules/
 frontend/.next/
+.coverage
