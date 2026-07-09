@@ -39,4 +39,4 @@ jobs:
           SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
           SENDER_NAME: ${{ secrets.SENDER_NAME }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }} # Optional
-        run: python main.py
+        run: python main.py --once
