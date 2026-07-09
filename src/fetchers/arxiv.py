@@ -38,6 +38,7 @@ async def fetch_arxiv(categories: List[str], max_items: int = 8) -> List[Dict[st
                 "max_results":  per_batch,
             }
 
+            xml_text = None
             for attempt in range(3):
                 try:
                     resp = await client.get(ARXIV_API, params=params)
@@ -54,6 +55,8 @@ async def fetch_arxiv(categories: List[str], max_items: int = 8) -> List[Dict[st
                     if attempt == 2: raise e
                     await asyncio.sleep(2)
 
+            if xml_text is None:
+                continue
             root    = ET.fromstring(xml_text)
             entries = root.findall("atom:entry", NS)
 
