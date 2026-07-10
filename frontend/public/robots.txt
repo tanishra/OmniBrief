@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://omni-brief.vercel.app/sitemap.xml

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f6f3ef"/>
+  <rect width="1200" height="630" fill="url(#g)" opacity="0.4"/>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1200" y2="630">
+      <stop offset="0%" stop-color="#ff4500" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#1a1a1a" stop-opacity="0.04"/>
+    </linearGradient>
+  </defs>
+  <text x="80" y="280" font-family="system-ui, sans-serif" font-size="72" font-weight="800" fill="#1a1a1a">OmniBrief</text>
+  <text x="80" y="360" font-family="system-ui, sans-serif" font-size="28" fill="#5d6671">High-signal AI intelligence, distilled into</text>
+  <text x="80" y="400" font-family="system-ui, sans-serif" font-size="28" fill="#5d6671">one calm daily report.</text>
+</svg>
