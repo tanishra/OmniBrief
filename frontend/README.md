@@ -10,7 +10,7 @@ npm run dev
 Create a `.env.local` file with:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=https://omni.tanish.website
+NEXT_PUBLIC_API_BASE_URL=https://omni-brief.vercel.app
 ```
 
 ## Deploying to Vercel
@@ -20,5 +20,5 @@ NEXT_PUBLIC_API_BASE_URL=https://omni.tanish.website
 - Environment variable:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=https://omni.tanish.website
+NEXT_PUBLIC_API_BASE_URL=https://omni-brief.vercel.app
 ```
