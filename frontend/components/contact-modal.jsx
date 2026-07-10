@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "https://omni.tanish.website";
+import { useState, useEffect, useCallback } from "react";
+import { post } from "../lib/api";
 
 export default function ContactModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,14 +9,36 @@ export default function ContactModal() {
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
 
-  // Prevent scroll when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = "";
     }
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [isOpen]);
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === "Escape") setIsOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [isOpen, handleKeyDown]);
+
+  const modalRef = useCallback((node) => {
+    if (node) {
+      const focusable = node.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length > 0) focusable[0].focus();
+    }
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -26,17 +46,7 @@ export default function ContactModal() {
     setError("");
 
     try {
-      const resp = await fetch(`${API_BASE_URL}/contact`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!resp.ok) {
-        const data = await resp.json();
-        throw new Error(data.detail || "Failed to send message.");
-      }
-
+      await post("/contact", formData);
       setStatus("success");
       setFormData({ name: "", email: "", message: "" });
       setTimeout(() => {
@@ -59,14 +69,19 @@ export default function ContactModal() {
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Contact OmniBrief team"
+          ref={modalRef}
+        >
           <div
             className="absolute inset-0 bg-ink/40 backdrop-blur-sm transition-opacity"
             onClick={() => setIsOpen(false)}
+            aria-hidden="true"
           />
 
-          {/* Modal Card */}
           <div className="relative w-full max-w-lg transform overflow-hidden rounded-[2rem] border border-mist bg-white p-8 shadow-editorial transition-all animate-in fade-in zoom-in duration-300">
             <div className="flex items-center justify-between border-b border-mist pb-6">
               <div>
@@ -79,6 +94,7 @@ export default function ContactModal() {
               </div>
               <button
                 onClick={() => setIsOpen(false)}
+                aria-label="Close dialog"
                 className="rounded-full p-2 text-slate hover:bg-paper hover:text-ink transition-colors"
               >
                 <svg
@@ -148,13 +164,19 @@ export default function ContactModal() {
               </div>
 
               {status === "error" && (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+                <div
+                  aria-live="polite"
+                  className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900"
+                >
                   {error}
                 </div>
               )}
 
               {status === "success" && (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+                <div
+                  aria-live="polite"
+                  className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900"
+                >
                   <p className="font-bold">Message sent successfully!</p>
                   <p className="mt-1">We will contact you within 24 hours.</p>
                 </div>

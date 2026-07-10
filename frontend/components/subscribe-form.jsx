@@ -1,9 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "https://omni.tanish.website";
+import { post } from "../lib/api";
 
 export default function SubscribeForm({ compact = false, dark = false }) {
   const inputId = useId();
@@ -17,23 +15,11 @@ export default function SubscribeForm({ compact = false, dark = false }) {
     setMessage("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/subscribe`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Subscription request failed.");
-      }
-
-      const data = await response.json();
+      const data = await post("/subscribe", { email });
       setStatus("success");
       setMessage(data.message);
       setEmail("");
-    } catch (error) {
+    } catch {
       setStatus("error");
       setMessage("Something went wrong. Please try again in a minute.");
     }
@@ -98,6 +84,7 @@ export default function SubscribeForm({ compact = false, dark = false }) {
         </button>
       </form>
       <div
+        aria-live="polite"
         className={`mt-4 rounded-2xl px-4 py-3 text-sm leading-7 transition-all duration-300 ${feedbackClass}`}
       >
         {status === "success" ? (
