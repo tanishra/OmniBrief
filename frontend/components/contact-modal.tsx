@@ -3,10 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { post } from "../lib/api";
 
+type FormData = { name: string; email: string; message: string };
+type Status = "idle" | "loading" | "success" | "error";
+
 export default function ContactModal() {
   const [isOpen, setIsOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
-  const [status, setStatus] = useState("idle");
+  const [formData, setFormData] = useState<FormData>({ name: "", email: "", message: "" });
+  const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -20,7 +23,7 @@ export default function ContactModal() {
     };
   }, [isOpen]);
 
-  const handleKeyDown = useCallback((e) => {
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") setIsOpen(false);
   }, []);
 
@@ -31,16 +34,16 @@ export default function ContactModal() {
     }
   }, [isOpen, handleKeyDown]);
 
-  const modalRef = useCallback((node) => {
+  const modalRef = useCallback((node: HTMLDivElement | null) => {
     if (node) {
-      const focusable = node.querySelectorAll(
+      const focusable = node.querySelectorAll<HTMLElement>(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       );
       if (focusable.length > 0) focusable[0].focus();
     }
   }, []);
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus("loading");
     setError("");
@@ -55,7 +58,7 @@ export default function ContactModal() {
       }, 3000);
     } catch (err) {
       setStatus("error");
-      setError(err.message);
+      setError(err instanceof Error ? err.message : "Something went wrong");
     }
   }
 

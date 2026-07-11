@@ -3,13 +3,15 @@
 import { useId, useState } from "react";
 import { post } from "../lib/api";
 
-export default function SubscribeForm({ compact = false, dark = false }) {
+type Status = "idle" | "loading" | "success" | "error";
+
+export default function SubscribeForm({ compact = false, dark = false }: { compact?: boolean; dark?: boolean }) {
   const inputId = useId();
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState("idle");
+  const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
 
-  async function onSubmit(event) {
+  async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     setStatus("loading");
     setMessage("");
