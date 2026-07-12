@@ -17,7 +17,7 @@ export default function SubscribeForm({ compact = false, dark = false }: { compa
     setMessage("");
 
     try {
-      const data = await post("/subscribe", { email });
+      const data = await post<{ message: string }>("/subscribe", { email });
       setStatus("success");
       setMessage(data.message);
       setEmail("");
