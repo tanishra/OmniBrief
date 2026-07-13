@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { post } from "../lib/api";
 
 type FormData = { name: string; email: string; message: string };
@@ -11,6 +11,12 @@ export default function ContactModal() {
   const [formData, setFormData] = useState<FormData>({ name: "", email: "", message: "" });
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  function close() {
+    setIsOpen(false);
+    triggerRef.current?.focus();
+  }
 
   useEffect(() => {
     if (isOpen) {
@@ -24,7 +30,27 @@ export default function ContactModal() {
   }, [isOpen]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === "Escape") setIsOpen(false);
+    if (e.key === "Escape") {
+      close();
+      return;
+    }
+    if (e.key === "Tab") {
+      const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
+      if (!dialog) return;
+      const focusable = dialog.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -37,7 +63,7 @@ export default function ContactModal() {
   const modalRef = useCallback((node: HTMLDivElement | null) => {
     if (node) {
       const focusable = node.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
       );
       if (focusable.length > 0) focusable[0].focus();
     }
@@ -53,7 +79,7 @@ export default function ContactModal() {
       setStatus("success");
       setFormData({ name: "", email: "", message: "" });
       setTimeout(() => {
-        setIsOpen(false);
+        close();
         setStatus("idle");
       }, 3000);
     } catch (err) {
@@ -65,6 +91,7 @@ export default function ContactModal() {
   return (
     <>
       <button
+        ref={triggerRef}
         onClick={() => setIsOpen(true)}
         className="inline-flex rounded-full bg-ink px-5 py-2 text-sm font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-[#262626] hover:shadow-lg"
       >
@@ -81,7 +108,7 @@ export default function ContactModal() {
         >
           <div
             className="absolute inset-0 bg-ink/40 backdrop-blur-sm transition-opacity"
-            onClick={() => setIsOpen(false)}
+            onClick={close}
             aria-hidden="true"
           />
 
@@ -96,7 +123,7 @@ export default function ContactModal() {
                 </p>
               </div>
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={close}
                 aria-label="Close dialog"
                 className="rounded-full p-2 text-slate hover:bg-paper hover:text-ink transition-colors"
               >

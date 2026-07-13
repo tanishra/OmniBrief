@@ -21,7 +21,8 @@ export default function SubscribeForm({ compact = false, dark = false }: { compa
       setStatus("success");
       setMessage(data.message);
       setEmail("");
-    } catch {
+    } catch (err) {
+      console.error("Subscribe error:", err);
       setStatus("error");
       setMessage("Something went wrong. Please try again in a minute.");
     }
