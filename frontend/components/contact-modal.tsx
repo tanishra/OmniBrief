@@ -62,8 +62,13 @@ export default function ContactModal() {
 
   const modalRef = useCallback((node: HTMLDivElement | null) => {
     if (node) {
+      const input = node.querySelector<HTMLElement>('input:not([disabled])');
+      if (input) {
+        input.focus();
+        return;
+      }
       const focusable = node.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        'button:not([disabled]), [href], select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
       );
       if (focusable.length > 0) focusable[0].focus();
     }
