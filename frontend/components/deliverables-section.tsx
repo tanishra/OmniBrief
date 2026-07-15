@@ -45,7 +45,7 @@ export default function DeliverablesSection() {
           <h3 className="mt-4 font-heading text-4xl font-bold tracking-tight md:text-5xl">
             Subscribe once. Verify once. Read better every day.
           </h3>
-          <p className="mt-6 max-w-xl text-base leading-8 text-white/72">
+          <p className="mt-6 max-w-xl text-base leading-8 text-white/85">
             If you care about AI with an engineer&apos;s mindset, OmniBrief is
             the cleanest way to keep up without drowning in the feed.
           </p>
