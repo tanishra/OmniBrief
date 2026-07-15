@@ -17,7 +17,7 @@ export default function SubscribeForm({ compact = false, dark = false }: { compa
     setMessage("");
 
     try {
-      const data = await post<{ message: string }>("/subscribe", { email });
+      const data = await post<{ message: string }>("/subscribe", { email: email.trim() });
       setStatus("success");
       setMessage(data.message);
       setEmail("");
@@ -74,7 +74,9 @@ export default function SubscribeForm({ compact = false, dark = false }: { compa
           type="email"
           required
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) => setEmail(event.target.value.trimStart())}
+          onBlur={(event) => setEmail(event.target.value.trim())}
+          pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
           placeholder="Enter your work email"
           className={`min-h-14 flex-1 rounded-xl border border-transparent bg-transparent px-4 text-sm outline-none ring-0 focus:border-accent/30 focus:ring-0 ${inputClass}`}
         />
