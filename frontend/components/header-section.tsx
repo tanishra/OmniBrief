@@ -7,10 +7,10 @@ export default function HeaderSection() {
         <a href="#top" className="font-heading text-2xl font-extrabold tracking-tightest">
           OmniBrief
         </a>
-        <nav className="hidden items-center gap-8 text-sm text-slate md:flex">
-          <a href="#problem" className="hover:text-ink">Why</a>
-          <a href="#process" className="hover:text-ink">How it works</a>
-          <a href="#audience" className="hover:text-ink">Who it&apos;s for</a>
+        <nav className="hidden items-center gap-8 text-sm text-slate md:flex" aria-label="Main navigation">
+          <a href="#problem" className="focus-visible:ring-accent/40 focus-visible:outline-none focus-visible:ring-2 hover:text-ink" aria-label="Why section">Why</a>
+          <a href="#process" className="focus-visible:ring-accent/40 focus-visible:outline-none focus-visible:ring-2 hover:text-ink" aria-label="How it works section">How it works</a>
+          <a href="#audience" className="focus-visible:ring-accent/40 focus-visible:outline-none focus-visible:ring-2 hover:text-ink" aria-label="Who it&apos;s for section">Who it&apos;s for</a>
         </nav>
         <a
           href="https://github.com/tanishra/OmniBrief"
