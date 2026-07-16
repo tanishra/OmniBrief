@@ -16,7 +16,7 @@ export default function Error({ error, reset }: { error: Error; reset: () => voi
         </p>
         <button
           onClick={() => reset()}
-          className="mt-8 inline-flex rounded-full bg-ink px-6 py-3 text-sm font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-[#262626]"
+          className="btn-primary mt-8 inline-flex rounded-full px-6 py-3 text-sm font-bold"
         >
           Try again
         </button>

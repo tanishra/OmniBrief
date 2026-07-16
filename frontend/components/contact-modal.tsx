@@ -20,13 +20,10 @@ export default function ContactModal() {
 
   useEffect(() => {
     if (isOpen) {
+      const prev = document.body.style.overflow;
       document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
+      return () => { document.body.style.overflow = prev; };
     }
-    return () => {
-      document.body.style.overflow = "";
-    };
   }, [isOpen]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -98,7 +95,7 @@ export default function ContactModal() {
       <button
         ref={triggerRef}
         onClick={() => setIsOpen(true)}
-        className="inline-flex rounded-full bg-ink px-5 py-2 text-sm font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-[#262626] hover:shadow-lg"
+        className="btn-primary inline-flex rounded-full px-5 py-2 text-sm font-bold"
       >
         Contact
       </button>
@@ -117,7 +114,7 @@ export default function ContactModal() {
             aria-hidden="true"
           />
 
-          <div className="relative w-full max-w-lg transform overflow-hidden rounded-[2rem] border border-mist bg-white p-8 shadow-editorial transition-all animate-in fade-in zoom-in duration-300">
+          <div className="relative w-full max-w-lg transform overflow-hidden rounded-[2rem] border border-mist bg-white p-8 shadow-editorial animate-in fade-in zoom-in duration-300">
             <div className="flex items-center justify-between border-b border-mist pb-6">
               <div>
                 <h2 className="font-heading text-2xl font-bold text-ink">
@@ -162,7 +159,7 @@ export default function ContactModal() {
                       setFormData({ ...formData, name: e.target.value })
                     }
                     placeholder="Your name"
-                    className="w-full rounded-xl border border-mist bg-paper px-4 py-3 text-sm outline-none transition-all focus:border-accent/30 focus:bg-white focus:ring-4 focus:ring-accent/5"
+                    className="w-full rounded-xl border border-mist bg-paper px-4 py-3 text-sm outline-none transition focus:border-accent/30 focus:bg-white focus:ring-4 focus:ring-accent/5"
                   />
                 </div>
                 <div className="space-y-2">
@@ -177,7 +174,7 @@ export default function ContactModal() {
                       setFormData({ ...formData, email: e.target.value })
                     }
                     placeholder="Your email"
-                    className="w-full rounded-xl border border-mist bg-paper px-4 py-3 text-sm outline-none transition-all focus:border-accent/30 focus:bg-white focus:ring-4 focus:ring-accent/5"
+                    className="w-full rounded-xl border border-mist bg-paper px-4 py-3 text-sm outline-none transition focus:border-accent/30 focus:bg-white focus:ring-4 focus:ring-accent/5"
                   />
                 </div>
               </div>
@@ -194,7 +191,7 @@ export default function ContactModal() {
                     setFormData({ ...formData, message: e.target.value })
                   }
                   placeholder="How can we help?"
-                  className="w-full resize-none rounded-xl border border-mist bg-paper px-4 py-3 text-sm outline-none transition-all focus:border-accent/30 focus:bg-white focus:ring-4 focus:ring-accent/5"
+                  className="w-full resize-none rounded-xl border border-mist bg-paper px-4 py-3 text-sm outline-none transition focus:border-accent/30 focus:bg-white focus:ring-4 focus:ring-accent/5"
                 />
               </div>
 
@@ -220,7 +217,7 @@ export default function ContactModal() {
               <button
                 type="submit"
                 disabled={status === "loading" || status === "success"}
-                className="w-full rounded-xl bg-ink px-6 py-4 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-[#262626] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-70"
+                className="btn-primary w-full rounded-xl px-6 py-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {status === "loading" ? "Sending..." : "Send Message"}
               </button>

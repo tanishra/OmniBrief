@@ -38,7 +38,7 @@ export default function SubscribeForm({ compact = false, dark = false }: { compa
 
   const buttonClass = dark
     ? "bg-paper text-ink hover:-translate-y-0.5 hover:bg-white hover:shadow-lg"
-    : "bg-ink text-white hover:-translate-y-0.5 hover:bg-[#262626] hover:shadow-lg";
+    : "btn-primary";
 
   const feedbackClass =
     status === "success"
@@ -90,7 +90,7 @@ export default function SubscribeForm({ compact = false, dark = false }: { compa
       </form>
       <div
         aria-live="polite"
-        className={`mt-4 rounded-2xl px-4 py-3 text-sm leading-7 transition-all duration-300 ${feedbackClass}`}
+        className={`mt-4 rounded-2xl px-4 py-3 text-sm leading-7 transition duration-300 ${feedbackClass}`}
       >
         {status === "success" ? (
           <div className="space-y-1">
