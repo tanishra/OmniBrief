@@ -41,7 +41,7 @@ export default function ProblemSection() {
             {items.map((item) => (
               <div
                 key={item}
-                className="flex items-start gap-3 rounded-2xl border border-mist bg-white/70 p-4 transition duration-300 hover:-translate-y-0.5 hover:bg-white"
+                className="flex items-start gap-3 rounded-2xl border border-mist bg-white/70 p-4 transition duration-300 hover:-translate-y-0.5 focus-visible:-translate-y-0.5 hover:bg-white"
               >
                 <span className="mt-1 h-2.5 w-2.5 rounded-full bg-copper" />
                 <p className="text-sm leading-7 text-slate">{item}</p>

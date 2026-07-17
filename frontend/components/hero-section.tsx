@@ -28,7 +28,7 @@ export default function HeroSection() {
           </div>
         </div>
 
-        <div className="rounded-[2rem] border border-mist/80 bg-white/75 p-7 shadow-editorial transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_80px_rgba(23,23,23,0.12)]">
+        <div className="rounded-[2rem] border border-mist/80 bg-white/75 p-7 shadow-editorial transition duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 hover:shadow-[0_28px_80px_rgba(23,23,23,0.12)]">
           <div className="flex items-center justify-between border-b border-mist pb-4">
             <span className="font-heading text-lg font-bold">Today&apos;s Brief</span>
             <span className="rounded-full bg-accentSoft px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-accent">
@@ -47,15 +47,15 @@ export default function HeroSection() {
               </p>
             </div>
             <div className="grid gap-4 border-t border-mist pt-5">
-              <div className="rounded-2xl bg-paper p-4 transition duration-300 hover:-translate-y-1 hover:bg-white">
+              <div className="rounded-2xl bg-paper p-4 transition duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 hover:bg-white">
                 <p className="text-xs uppercase tracking-[0.18em] text-slate">Research</p>
                 <p className="mt-2 font-heading text-lg font-bold">Frontier paper with linked implementation</p>
               </div>
-              <div className="rounded-2xl bg-paper p-4 transition duration-300 hover:-translate-y-1 hover:bg-white">
+              <div className="rounded-2xl bg-paper p-4 transition duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 hover:bg-white">
                 <p className="text-xs uppercase tracking-[0.18em] text-slate">GitHub</p>
                 <p className="mt-2 font-heading text-lg font-bold">High-velocity Python repo with real technical leverage</p>
               </div>
-              <div className="rounded-2xl bg-paper p-4 transition duration-300 hover:-translate-y-1 hover:bg-white">
+              <div className="rounded-2xl bg-paper p-4 transition duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 hover:bg-white">
                 <p className="text-xs uppercase tracking-[0.18em] text-slate">Signal</p>
                 <p className="mt-2 font-heading text-lg font-bold">One crisp strategic read on what the day actually means</p>
               </div>

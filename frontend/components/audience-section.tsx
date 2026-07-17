@@ -39,7 +39,7 @@ export default function AudienceSection() {
           {audience.map((item) => (
             <article
               key={item.label}
-              className="rounded-[1.75rem] border border-white/60 bg-white/65 p-8 transition duration-300 hover:-translate-y-1 hover:bg-white/85 hover:shadow-editorial"
+              className="rounded-[1.75rem] border border-white/60 bg-white/65 p-8 transition duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 hover:bg-white/85 hover:shadow-editorial"
             >
               <p className="text-xs uppercase tracking-[0.18em] text-slate">Audience</p>
               <h3 className="mt-4 font-heading text-2xl font-bold text-ink">

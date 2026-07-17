@@ -4,7 +4,7 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-ink text-white transition hover:-translate-y-0.5 hover:bg-[#262626] hover:shadow-lg;
+    @apply bg-ink text-white transition hover:-translate-y-0.5 focus-visible:-translate-y-0.5 hover:bg-[#262626] hover:shadow-lg;
   }
 }
 

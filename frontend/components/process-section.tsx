@@ -36,7 +36,7 @@ export default function ProcessSection() {
         {steps.map((item) => (
           <article
             key={item.step}
-            className="rounded-[1.75rem] border border-mist bg-white/70 p-8 shadow-editorial transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_64px_rgba(23,23,23,0.12)]"
+            className="rounded-[1.75rem] border border-mist bg-white/70 p-8 shadow-editorial transition duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 hover:shadow-[0_24px_64px_rgba(23,23,23,0.12)]"
           >
             <span className="text-xs font-semibold uppercase tracking-[0.24em] text-copper">
               Step {item.step}

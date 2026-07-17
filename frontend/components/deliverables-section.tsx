@@ -27,7 +27,7 @@ export default function DeliverablesSection() {
             {deliverables.map((item) => (
               <div
                 key={item}
-                className="rounded-2xl border border-mist bg-white/65 px-5 py-4 text-sm leading-7 text-slate transition duration-300 hover:-translate-y-0.5 hover:bg-white"
+                className="rounded-2xl border border-mist bg-white/65 px-5 py-4 text-sm leading-7 text-slate transition duration-300 hover:-translate-y-0.5 focus-visible:-translate-y-0.5 hover:bg-white"
               >
                 {item}
               </div>
@@ -37,7 +37,7 @@ export default function DeliverablesSection() {
 
         <div
           id="final-cta"
-          className="rounded-[2rem] bg-ink px-8 py-10 text-white shadow-editorial transition duration-300 hover:-translate-y-1 hover:shadow-[0_32px_90px_rgba(23,23,23,0.18)] sm:px-12 sm:py-14"
+          className="rounded-[2rem] bg-ink px-8 py-10 text-white shadow-editorial transition duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 hover:shadow-[0_32px_90px_rgba(23,23,23,0.18)] sm:px-12 sm:py-14"
         >
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
             Final invitation

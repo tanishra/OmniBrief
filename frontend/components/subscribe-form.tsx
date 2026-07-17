@@ -37,7 +37,7 @@ export default function SubscribeForm({ compact = false, dark = false }: { compa
     : "text-ink placeholder:text-slate/70";
 
   const buttonClass = dark
-    ? "bg-paper text-ink hover:-translate-y-0.5 hover:bg-white hover:shadow-lg"
+    ? "bg-paper text-ink hover:-translate-y-0.5 focus-visible:-translate-y-0.5 hover:bg-white hover:shadow-lg"
     : "btn-primary";
 
   const feedbackClass =
@@ -67,7 +67,7 @@ export default function SubscribeForm({ compact = false, dark = false }: { compa
         onSubmit={onSubmit}
         className={`flex w-full flex-col gap-3 rounded-2xl p-2 sm:flex-row ${wrapperClass} ${
           compact ? "max-w-md" : "max-w-xl"
-        } transition duration-300 hover:-translate-y-0.5 hover:shadow-editorial`}
+        } transition duration-300 hover:-translate-y-0.5 focus-visible:-translate-y-0.5 hover:shadow-editorial`}
       >
         <input
           id={inputId}
