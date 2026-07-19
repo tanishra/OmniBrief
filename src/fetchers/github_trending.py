@@ -1,13 +1,15 @@
-from src.logger import logger
 """
 src/fetchers/github_trending.py
 V7.3: Authority-Based Scouting & Velocity Tracking.
 """
 
-import httpx
 import asyncio
-from typing import List, Dict, Any
 from datetime import datetime, timedelta
+from typing import Any, Dict, List
+
+import httpx
+
+from src.logger import logger
 
 GITHUB_SEARCH_API = "https://api.github.com/search/repositories"
 
@@ -49,7 +51,8 @@ async def fetch_github_trending(
                             if url not in seen_urls:
                                 seen_urls.add(url)
                                 all_repos.append(_format_repo(item, strategy))
-                except Exception: continue
+                except Exception:
+                    continue
                 await asyncio.sleep(1.0)
 
         # Strategy 3: Authority Scout (Top Labs)
@@ -67,14 +70,17 @@ async def fetch_github_trending(
                             if url not in seen_urls:
                                 seen_urls.add(url)
                                 all_repos.append(_format_repo(item, "authority"))
-                except Exception: continue
+                except Exception:
+                    continue
                 await asyncio.sleep(1.0)
 
     # Final Sort: Prioritize Authority and Innovation over just raw Stars
     def rank_score(r):
         score = 0
-        if r["strategy"] == "authority": score += 1000 # Boost labs
-        if r["strategy"] == "created": score += 500   # Boost new innovation
+        if r["strategy"] == "authority":
+            score += 1000  # Boost labs
+        if r["strategy"] == "created":
+            score += 500  # Boost new innovation
         score += min(r["stars"] / 10, 1000)           # Normalize stars
         return score
 

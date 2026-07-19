@@ -1,15 +1,16 @@
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-import httpx
-from src.logger import logger
 """
 src/fetchers/reddit.py
 Fetches top AI posts from Reddit using the public JSON API.
 Uses endpoint fallbacks because Reddit may block one hostname while allowing another.
 """
 
-import httpx
 import asyncio
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
+import httpx
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+
+from src.logger import logger
 
 REDDIT_JSON_ENDPOINTS = [
     "https://www.reddit.com/r/{subreddit}/top.json",
@@ -97,7 +98,7 @@ async def fetch_reddit(
     return all_posts[:max_items]
 
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)))
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)))  # noqa: E501
 async def _fetch_subreddit_posts(
     client: httpx.AsyncClient,
     subreddit: str,
@@ -127,9 +128,10 @@ async def _fetch_subreddit_posts(
 
 
 if __name__ == "__main__":
-    import sys, os
+    import os
+    import sys
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-    from config import REDDIT_SUBREDDITS, REDDIT_MAX_ITEMS
+    from config import REDDIT_MAX_ITEMS, REDDIT_SUBREDDITS
     items = asyncio.run(fetch_reddit(REDDIT_SUBREDDITS, REDDIT_MAX_ITEMS))
     for i in items:
         logger.info(f"[{i['subreddit']}] ▲{i['score']}  {i['title']}")

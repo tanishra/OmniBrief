@@ -37,7 +37,7 @@ warn_unused_ignores = true
 
 [tool.ruff]
 target-version = "py311"
-line-length = 120
+line-length = 140
 extend-exclude = ["*.html"]
 
 [tool.ruff.lint]

@@ -1,18 +1,19 @@
-from __future__ import annotations
+# ruff: noqa: E501
 """
 src/mailer.py
 Resend email delivery for confirmation, digest, and alert emails.
 """
 
-from src.logger import logger
+from __future__ import annotations
 
 import asyncio
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import httpx
 
 from config import ADMIN_EMAIL, RESEND_API_KEY, SENDER_EMAIL, SENDER_NAME
+from src.logger import logger
 
 RESEND_SEND_URL = "https://api.resend.com/emails"
 

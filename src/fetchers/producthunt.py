@@ -1,4 +1,3 @@
-from src.logger import logger
 """
 src/fetchers/producthunt.py
 Fetches top AI products launched on ProductHunt via their RSS feed.
@@ -8,9 +7,11 @@ Uses httpx + xml.etree.ElementTree — no feedparser dependency.
 import asyncio
 import re
 import xml.etree.ElementTree as ET
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 import httpx
+
+from src.logger import logger
 
 PRODUCTHUNT_RSS = "https://www.producthunt.com/feed?category=artificial-intelligence"
 

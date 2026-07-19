@@ -1,4 +1,3 @@
-from src.logger import logger
 """
 src/fetchers/rss_feeds.py
 Parses multiple RSS/Atom feeds to pull AI news articles.
@@ -8,9 +7,11 @@ Uses httpx + xml.etree.ElementTree — no feedparser dependency.
 import asyncio
 import re
 import xml.etree.ElementTree as ET
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 import httpx
+
+from src.logger import logger
 
 ATOM_NS = "http://www.w3.org/2005/Atom"
 

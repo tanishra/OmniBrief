@@ -1,4 +1,3 @@
-from src.logger import logger
 """
 src/cost_tracker.py
 Tracks token usage and estimated cost for OpenAI calls.

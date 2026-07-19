@@ -1,15 +1,16 @@
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-import httpx
-from src.logger import logger
 """
 src/fetchers/hackernews.py
 Fetches top HN posts that are AI/ML related using the Algolia HN Search API.
 No API key needed — completely free.
 """
 
-import httpx
 import asyncio
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
+import httpx
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+
+from src.logger import logger
 
 # Keywords that indicate an AI/ML post
 AI_KEYWORDS = [
@@ -24,7 +25,7 @@ AI_KEYWORDS = [
 HN_ALGOLIA  = "https://hn.algolia.com/api/v1/search"
 
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)))
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)))  # noqa: E501
 async def fetch_hackernews(max_items: int = 8) -> List[Dict[str, Any]]:
     """
     Fetches top HN stories and filters for AI-related ones.

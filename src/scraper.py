@@ -1,14 +1,15 @@
-from src.logger import logger
-
-import socket
+import asyncio
 import ipaddress
+import socket
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
+
+import httpcore
 import httpx
 from bs4 import BeautifulSoup
-import asyncio
-from typing import Dict, Any, Optional, List
 from playwright.async_api import async_playwright
-import httpcore
+
+from src.logger import logger
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -20,7 +21,7 @@ def _resolve_and_check_safe(url: str) -> Optional[str]:
         parsed = urlparse(url)
         if parsed.scheme not in ("http", "https"):
             return None
-        
+
         hostname = parsed.hostname
         if not hostname:
             return None
@@ -97,7 +98,6 @@ _browser = None
 _playwright = None
 _browser_semaphore = None
 
-import asyncio
 _browser_lock = asyncio.Lock()
 
 async def _get_browser():
@@ -169,7 +169,7 @@ async def _scrape_playwright(url: str) -> Dict[str, Any]:
     if not await _resolve_and_check_safe_async(url):
         logger.warning(f"    🚫 SSRF Blocked (Playwright): {url[:50]}...")
         return {}
-        
+
     global _browser_semaphore
     if _browser_semaphore is None:
         _browser_semaphore = asyncio.Semaphore(3)
@@ -195,7 +195,8 @@ async def _scrape_playwright(url: str) -> Dict[str, Any]:
                 soup = BeautifulSoup(content, "html.parser")
 
                 # Extract basic text
-                for s in soup(["script", "style"]): s.decompose()
+                for s in soup(["script", "style"]):
+                    s.decompose()
                 text = soup.get_text(separator=" ", strip=True)
 
                 # Try to find OG image again in rendered HTML
@@ -220,25 +221,26 @@ async def fetch_metadata(url: str) -> Dict[str, Any]:
             resp = await client.get(url)
             if resp.status_code == 200:
                 soup = BeautifulSoup(resp.text, "html.parser")
-                
+
                 og_image = soup.find("meta", property="og:image")
                 image_url = og_image["content"] if og_image else None
-                
-                for s in soup(["script", "style", "nav", "header", "footer"]): s.decompose()
+
+                for s in soup(["script", "style", "nav", "header", "footer"]):
+                    s.decompose()
                 article = soup.find("article") or soup.find("main")
                 text = article.get_text(separator=" ", strip=True) if article else soup.get_text(separator=" ", strip=True)
-                
+
                 # If text is too short, site likely requires JS
                 if len(text) < 500:
                     logger.info(f"    🔄 Low content found, triggering Playwright fallback for {url[:30]}...")
                     return await _scrape_playwright(url)
-                
+
                 return {"og_image": image_url, "full_text": text[:3000]}
-            
+
             elif resp.status_code in (403, 401, 429):
                 logger.info(f"    🔄 Blocked ({resp.status_code}), triggering Playwright fallback...")
                 return await _scrape_playwright(url)
-                
+
     except Exception as e:
         logger.warning(f"    ⚠️ httpx failed, triggering Playwright fallback for {url[:30]}: {e}")
         return await _scrape_playwright(url)
@@ -248,18 +250,18 @@ async def enrich_items(items: list, max_scrape: int = 5) -> list:
     """Enriches items with metadata and full text."""
     tasks = [fetch_metadata(item.get("url", "")) for item in items[:max_scrape]]
     meta_results = await asyncio.gather(*tasks)
-    
+
     for i, meta in enumerate(meta_results):
         if meta:
             items[i].update(meta)
-    
+
     # Predictable GitHub fallback
     for item in items:
         if "github.com" in item.get("url", "") and not item.get("og_image"):
             user_repo = item.get("name", "").replace(" ", "")
             if "/" in user_repo:
                 item["og_image"] = f"https://opengraph.githubassets.com/1/{user_repo}"
-                
+
     # Shutdown playwright if used
     await _close_browser()
     return items

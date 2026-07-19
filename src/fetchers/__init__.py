@@ -1,5 +1,3 @@
-from src.logger import logger
-
 __all__: list[str] = [
     "fetch_arxiv",
     "fetch_hackernews",

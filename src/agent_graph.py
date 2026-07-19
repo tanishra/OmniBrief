@@ -1,4 +1,3 @@
-from src.logger import logger
 """
 src/agent_graph.py
 The LangGraph Intelligence Engine.
@@ -7,16 +6,23 @@ V7.2: LLM-based Ranking, Routing, and Cost Tracking.
 
 import json
 import os
-from typing import List, Dict, Any, TypedDict
-from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.memory import MemorySaver
+from typing import Any, Dict, List, TypedDict
+
 from langchain_openai import ChatOpenAI
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import END, StateGraph
+
 from config import (
+    ARXIV_MAX_ITEMS,
+    GITHUB_TRENDING_MAX,
+    HN_MAX_ITEMS,
     OPENAI_API_KEY,
-    HN_MAX_ITEMS, ARXIV_MAX_ITEMS, GITHUB_TRENDING_MAX,
-    PRODUCTHUNT_MAX, REDDIT_MAX_ITEMS,
+    PRODUCTHUNT_MAX,
+    REDDIT_MAX_ITEMS,
 )
 from src.cost_tracker import tracker
+from src.logger import logger
+
 
 class AgentState(TypedDict):
     raw_data: Dict[str, List[Dict[str, Any]]]
@@ -44,7 +50,7 @@ def curation_node(state: AgentState):
 async def ranking_node(state: AgentState):
     """Personalized technical novelty ranking using PROFILE.md."""
     logger.info("  ⭐ Graph: AI performing personalized novelty ranking...")
-    
+
     # Load Profile for Nuance
     profile_path = os.path.join(os.path.dirname(__file__), "..", "PROFILE.md")
     try:
@@ -83,7 +89,7 @@ Items:
         # TRACK COST
         if resp.usage_metadata:
             tracker.log_usage("gpt-4o-mini", resp.usage_metadata.get("input_tokens", 0), resp.usage_metadata.get("output_tokens", 0))
-            
+
         raw_content = resp.content.strip()
         if "```json" in raw_content:
             raw_content = raw_content.split("```json")[1].split("```")[0].strip()
@@ -115,18 +121,18 @@ Items:
 
 async def analyst_node(state: AgentState):
     logger.info(f"  🤖 Graph: Generating technical summaries (Attempt {state.get('iterations', 0) + 1})...")
-    from src.summarizer import summarize_all
     from src.scraper import enrich_items
-    
+    from src.summarizer import summarize_all
+
     ranked = state["ranked_data"]
     flagged = state.get("flagged_items", [])
     iterations = state.get("iterations", 0)
-    
+
     if iterations == 0:
         logger.info("    🔍 Scraping full text for top items...")
         ranked["news"]   = await enrich_items(ranked.get("news", []), max_scrape=8)
         ranked["github"] = await enrich_items(ranked.get("github", []), max_scrape=8)
-    
+
     if iterations > 0 and flagged:
         flagged_set = set(flagged)
         prev = state["summarized_data"]
@@ -137,19 +143,21 @@ async def analyst_node(state: AgentState):
         for s in set(list(kept.keys()) + list(new_summaries.keys())):
             merged[s] = kept.get(s, []) + new_summaries.get(s, [])
         return {"summarized_data": merged, "iterations": iterations + 1}
-    
+
     summarized = await summarize_all(ranked)
     return {"summarized_data": summarized, "iterations": iterations + 1}
 
 async def critic_node(state: AgentState):
     logger.info("  ⚖️  Graph: Critic reviewing summaries...")
     all_items = []
-    for items in state["summarized_data"].values(): all_items.extend(items)
-    if not all_items: return {"revision_needed": False, "flagged_items": []}
+    for items in state["summarized_data"].values():
+        all_items.extend(items)
+    if not all_items:
+        return {"revision_needed": False, "flagged_items": []}
     poor_quality = []
     for item in all_items:
         summary = item.get("ai_summary", "").lower()
-        if len(summary) < 60 or not any(kw in summary for kw in ["introduc", "propos", "method", "approach", "framework", "technique", "system", "model", "architecture", "algorithm", "dataset", "experiment", "result", "achieve", "outperform"]):
+        if len(summary) < 60 or not any(kw in summary for kw in ["introduc", "propos", "method", "approach", "framework", "technique", "system", "model", "architecture", "algorithm", "dataset", "experiment", "result", "achieve", "outperform"]):  # noqa: E501
             poor_quality.append(item.get("url", ""))
     if poor_quality and state["iterations"] < 2:
         logger.warning(f"    ⚠️ Critic requested revision for {len(poor_quality)} items.")
@@ -161,11 +169,11 @@ async def synthesis_node(state: AgentState):
     logger.info("  ✍️ Graph: Synthesizing trends using Ph.D. level model (GPT-4o)...")
     from src.summarizer import generate_executive_synthesis
     report, usage = await generate_executive_synthesis(state["summarized_data"], return_usage=True)
-    
+
     # TRACK COST
     if usage:
         tracker.log_usage("gpt-4o", usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0))
-        
+
     return {"synthesis": report}
 
 def should_continue(state: AgentState):

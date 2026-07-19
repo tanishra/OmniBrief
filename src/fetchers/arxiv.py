@@ -1,14 +1,16 @@
-from src.logger import logger
 """
 src/fetchers/arxiv.py
 Fetches latest AI research papers from ArXiv using their free Atom/XML API.
 No API key needed. Uses HTTPS directly to avoid 301 redirect issues.
 """
 
-import httpx
 import asyncio
 import xml.etree.ElementTree as ET
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
+import httpx
+
+from src.logger import logger
 
 # IMPORTANT: Use https:// directly — http:// causes a 301 redirect that httpx won't follow
 ARXIV_API = "https://export.arxiv.org/api/query"
@@ -23,7 +25,7 @@ async def fetch_arxiv(categories: List[str], max_items: int = 8) -> List[Dict[st
     # Split categories into smaller batches of 5 to keep URL length safe
     batch_size = 5
     batches = [categories[i:i + batch_size] for i in range(0, len(categories), batch_size)]
-    
+
     all_results = []
     seen = set()
 
@@ -47,12 +49,13 @@ async def fetch_arxiv(categories: List[str], max_items: int = 8) -> List[Dict[st
                         logger.warning(f"  ⚠️  ArXiv 429 - Waiting {wait}s...")
                         await asyncio.sleep(wait)
                         continue
-                    
+
                     resp.raise_for_status()
                     xml_text = resp.text
                     break
                 except Exception as e:
-                    if attempt == 2: raise e
+                    if attempt == 2:
+                        raise e
                     await asyncio.sleep(2)
 
             if xml_text is None:
@@ -62,9 +65,10 @@ async def fetch_arxiv(categories: List[str], max_items: int = 8) -> List[Dict[st
 
             for entry in entries:
                 title = _text(entry, "atom:title")
-                if not title or title in seen: continue
+                if not title or title in seen:
+                    continue
                 seen.add(title)
-                
+
                 abstract = _text(entry, "atom:summary")
                 url      = _text(entry, "atom:id")
                 pub      = _text(entry, "atom:published")
@@ -95,7 +99,8 @@ def _text(element, tag: str) -> str:
 
 
 if __name__ == "__main__":
-    import sys, os
+    import os
+    import sys
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
     from config import ARXIV_CATEGORIES, ARXIV_MAX_ITEMS
     items = asyncio.run(fetch_arxiv(ARXIV_CATEGORIES, ARXIV_MAX_ITEMS))

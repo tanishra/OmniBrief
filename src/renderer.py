@@ -1,4 +1,3 @@
-from src.logger import logger
 """
 src/renderer.py
 Renders the Jinja2 HTML email template with all digest sections.
@@ -6,8 +5,9 @@ V5: Added executive synthesis and hybrid scraping support.
 """
 
 import os
-from typing import Dict, List, Any
 from datetime import datetime
+from typing import Any, Dict, List
+
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
@@ -39,7 +39,7 @@ def render_digest(
     reddit_items = summarized_data.get("reddit", [])
 
     total_items   = sum(len(v) for v in summarized_data.values())
-    
+
     stats = {
         "papers":   len(arxiv_items),
         "repos":    len(github_items),

@@ -1,6 +1,7 @@
 import logging
 import sys
 
+
 def setup_logger(name="omnibrief"):
     logger = logging.getLogger(name)
     if not logger.handlers:
