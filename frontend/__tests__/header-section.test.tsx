@@ -2,6 +2,21 @@ import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import HeaderSection from "../components/header-section";
 
+beforeEach(() => {
+  Object.defineProperty(window, "IntersectionObserver", {
+    value: jest.fn().mockImplementation(() => ({
+      observe: jest.fn(),
+      disconnect: jest.fn(),
+      unobserve: jest.fn(),
+      takeRecords: jest.fn().mockReturnValue([]),
+      root: null,
+      rootMargin: "",
+      thresholds: [],
+    })),
+    writable: true,
+  });
+});
+
 describe("HeaderSection", () => {
   it("renders the OmniBrief brand link", () => {
     render(<HeaderSection />);
