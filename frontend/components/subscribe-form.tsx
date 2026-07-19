@@ -5,7 +5,13 @@ import { post } from "../lib/api";
 
 type Status = "idle" | "loading" | "success" | "error";
 
-export default function SubscribeForm({ compact = false, dark = false }: { compact?: boolean; dark?: boolean }) {
+export default function SubscribeForm({
+  compact = false,
+  dark = false,
+}: {
+  compact?: boolean;
+  dark?: boolean;
+}) {
   const inputId = useId();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>("idle");

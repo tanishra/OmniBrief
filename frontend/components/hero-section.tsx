@@ -12,9 +12,9 @@ export default function HeroSection() {
             High-signal AI intelligence, distilled into one calm daily report.
           </h1>
           <p className="mt-8 max-w-2xl text-lg leading-8 text-slate md:text-xl">
-            OmniBrief scans the global AI landscape, filters the noise, and
-            delivers a single technical briefing covering the papers, repos,
-            launches, and shifts that serious builders actually need to know.
+            OmniBrief scans the global AI landscape, filters the noise, and delivers a single
+            technical briefing covering the papers, repos, launches, and shifts that serious
+            builders actually need to know.
           </p>
           <div id="subscribe" className="mt-10 max-w-xl">
             <SubscribeForm />
@@ -41,23 +41,29 @@ export default function HeroSection() {
                 Executive synthesis
               </p>
               <p className="mt-2 text-sm leading-7 text-slate">
-                Agentic infra is maturing from toy orchestration to reliable
-                workflows, while research emphasis keeps shifting toward
-                efficiency, context management, and practical deployment.
+                Agentic infra is maturing from toy orchestration to reliable workflows, while
+                research emphasis keeps shifting toward efficiency, context management, and
+                practical deployment.
               </p>
             </div>
             <div className="grid gap-4 border-t border-mist pt-5">
               <div className="rounded-2xl bg-paper p-4 transition duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 hover:bg-white">
                 <p className="text-xs uppercase tracking-[0.18em] text-slate">Research</p>
-                <p className="mt-2 font-heading text-lg font-bold">Frontier paper with linked implementation</p>
+                <p className="mt-2 font-heading text-lg font-bold">
+                  Frontier paper with linked implementation
+                </p>
               </div>
               <div className="rounded-2xl bg-paper p-4 transition duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 hover:bg-white">
                 <p className="text-xs uppercase tracking-[0.18em] text-slate">GitHub</p>
-                <p className="mt-2 font-heading text-lg font-bold">High-velocity Python repo with real technical leverage</p>
+                <p className="mt-2 font-heading text-lg font-bold">
+                  High-velocity Python repo with real technical leverage
+                </p>
               </div>
               <div className="rounded-2xl bg-paper p-4 transition duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 hover:bg-white">
                 <p className="text-xs uppercase tracking-[0.18em] text-slate">Signal</p>
-                <p className="mt-2 font-heading text-lg font-bold">One crisp strategic read on what the day actually means</p>
+                <p className="mt-2 font-heading text-lg font-bold">
+                  One crisp strategic read on what the day actually means
+                </p>
               </div>
             </div>
           </div>

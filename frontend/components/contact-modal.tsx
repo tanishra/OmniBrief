@@ -22,7 +22,9 @@ export default function ContactModal() {
     if (isOpen) {
       const prev = document.body.style.overflow;
       document.body.style.overflow = "hidden";
-      return () => { document.body.style.overflow = prev; };
+      return () => {
+        document.body.style.overflow = prev;
+      };
     }
   }, [isOpen]);
 
@@ -59,7 +61,7 @@ export default function ContactModal() {
 
   const modalRef = useCallback((node: HTMLDivElement | null) => {
     if (node) {
-      const input = node.querySelector<HTMLElement>('input:not([disabled])');
+      const input = node.querySelector<HTMLElement>("input:not([disabled])");
       if (input) {
         input.focus();
         return;
@@ -117,9 +119,7 @@ export default function ContactModal() {
           <div className="relative w-full max-w-lg transform overflow-hidden rounded-[2rem] border border-mist bg-white p-8 shadow-editorial animate-in fade-in zoom-in duration-300">
             <div className="flex items-center justify-between border-b border-mist pb-6">
               <div>
-                <h2 className="font-heading text-2xl font-bold text-ink">
-                  Get in touch
-                </h2>
+                <h2 className="font-heading text-2xl font-bold text-ink">Get in touch</h2>
                 <p className="mt-1 text-sm text-slate">
                   Send a message directly to the OmniBrief team.
                 </p>
@@ -129,12 +129,7 @@ export default function ContactModal() {
                 aria-label="Close dialog"
                 className="rounded-full p-2 text-slate hover:bg-paper hover:text-ink transition-colors"
               >
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -155,9 +150,7 @@ export default function ContactModal() {
                     required
                     type="text"
                     value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Your name"
                     className="w-full rounded-xl border border-mist bg-paper px-4 py-3 text-sm outline-none transition focus:border-accent/30 focus:bg-white focus:ring-4 focus:ring-accent/5"
                   />
@@ -170,9 +163,7 @@ export default function ContactModal() {
                     required
                     type="email"
                     value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="Your email"
                     className="w-full rounded-xl border border-mist bg-paper px-4 py-3 text-sm outline-none transition focus:border-accent/30 focus:bg-white focus:ring-4 focus:ring-accent/5"
                   />
@@ -187,9 +178,7 @@ export default function ContactModal() {
                   required
                   rows={4}
                   value={formData.message}
-                  onChange={(e) =>
-                    setFormData({ ...formData, message: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   placeholder="How can we help?"
                   className="w-full resize-none rounded-xl border border-mist bg-paper px-4 py-3 text-sm outline-none transition focus:border-accent/30 focus:bg-white focus:ring-4 focus:ring-accent/5"
                 />

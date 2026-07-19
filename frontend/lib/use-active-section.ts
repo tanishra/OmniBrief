@@ -9,7 +9,7 @@ export function useActiveSection(): string {
 
   useEffect(() => {
     const elements = SECTIONS.map((id) => document.getElementById(id)).filter(
-      (el): el is HTMLElement => el !== null,
+      (el): el is HTMLElement => el !== null
     );
 
     const observer = new IntersectionObserver(
@@ -20,7 +20,7 @@ export function useActiveSection(): string {
           }
         }
       },
-      { rootMargin: "-40% 0px -55% 0px" },
+      { rootMargin: "-40% 0px -55% 0px" }
     );
 
     elements.forEach((el) => observer.observe(el));

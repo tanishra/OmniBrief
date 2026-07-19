@@ -18,9 +18,9 @@ export default function ProblemSection() {
             </div>
             <div className="rounded-2xl border border-black/5 bg-white/75 p-5">
               <p className="text-sm leading-7 text-slate">
-                ArXiv, GitHub, blog posts, company launches, Reddit signals,
-                Hacker News, newsletters, and scattered discussions all compete
-                for your attention. Most of it is repetitive, shallow, or late.
+                ArXiv, GitHub, blog posts, company launches, Reddit signals, Hacker News,
+                newsletters, and scattered discussions all compete for your attention. Most of it is
+                repetitive, shallow, or late.
               </p>
             </div>
           </div>
@@ -33,9 +33,9 @@ export default function ProblemSection() {
             Replace scattered browsing with one precise briefing.
           </h2>
           <p className="mt-6 text-lg leading-8 text-slate">
-            OmniBrief was built for the person who cares about technical
-            signal, not algorithmic feeds. It turns a messy daily information
-            hunt into one deliberate report you can actually use.
+            OmniBrief was built for the person who cares about technical signal, not algorithmic
+            feeds. It turns a messy daily information hunt into one deliberate report you can
+            actually use.
           </p>
           <div className="mt-8 grid gap-4">
             {items.map((item) => (

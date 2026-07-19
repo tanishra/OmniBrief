@@ -30,9 +30,9 @@ export default function AudienceSection() {
             </h2>
           </div>
           <p className="max-w-xl text-base leading-8 text-slate">
-            If your work depends on understanding research direction, emerging
-            tooling, or implementation quality, OmniBrief compresses that
-            tracking workload into one dependable daily read.
+            If your work depends on understanding research direction, emerging tooling, or
+            implementation quality, OmniBrief compresses that tracking workload into one dependable
+            daily read.
           </p>
         </div>
         <div className="mt-14 grid gap-6 md:grid-cols-3">
@@ -42,9 +42,7 @@ export default function AudienceSection() {
               className="rounded-[1.75rem] border border-white/60 bg-white/65 p-8 transition duration-300 hover:-translate-y-1 focus-visible:-translate-y-1 hover:bg-white/85 hover:shadow-editorial"
             >
               <p className="text-xs uppercase tracking-[0.18em] text-slate">Audience</p>
-              <h3 className="mt-4 font-heading text-2xl font-bold text-ink">
-                {item.label}
-              </h3>
+              <h3 className="mt-4 font-heading text-2xl font-bold text-ink">{item.label}</h3>
               <p className="mt-4 text-sm leading-7 text-slate">{item.description}</p>
             </article>
           ))}

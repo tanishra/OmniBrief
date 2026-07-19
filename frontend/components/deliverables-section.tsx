@@ -19,9 +19,8 @@ export default function DeliverablesSection() {
             One brief that respects your attention.
           </h2>
           <p className="mt-6 text-lg leading-8 text-slate">
-            The daily OmniBrief email is designed to be read quickly, trusted,
-            and revisited later. It gives you enough signal to act, without
-            requiring an hour of morning browsing.
+            The daily OmniBrief email is designed to be read quickly, trusted, and revisited later.
+            It gives you enough signal to act, without requiring an hour of morning browsing.
           </p>
           <div className="mt-8 grid gap-4">
             {deliverables.map((item) => (
@@ -46,8 +45,8 @@ export default function DeliverablesSection() {
             Subscribe once. Verify once. Read better every day.
           </h3>
           <p className="mt-6 max-w-xl text-base leading-8 text-white/85">
-            If you care about AI with an engineer&apos;s mindset, OmniBrief is
-            the cleanest way to keep up without drowning in the feed.
+            If you care about AI with an engineer&apos;s mindset, OmniBrief is the cleanest way to
+            keep up without drowning in the feed.
           </p>
           <div className="mt-10">
             <SubscribeForm dark />

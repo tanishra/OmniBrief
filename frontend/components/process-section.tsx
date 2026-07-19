@@ -27,8 +27,8 @@ export default function ProcessSection() {
           Simple on the surface. Deep under the hood.
         </h2>
         <p className="mt-5 text-lg leading-8 text-slate">
-          Subscription should feel effortless. The complexity lives in the
-          pipeline, not in your workflow.
+          Subscription should feel effortless. The complexity lives in the pipeline, not in your
+          workflow.
         </p>
       </div>
 
@@ -41,9 +41,7 @@ export default function ProcessSection() {
             <span className="text-xs font-semibold uppercase tracking-[0.24em] text-copper">
               Step {item.step}
             </span>
-            <h3 className="mt-5 font-heading text-2xl font-bold text-ink">
-              {item.title}
-            </h3>
+            <h3 className="mt-5 font-heading text-2xl font-bold text-ink">{item.title}</h3>
             <p className="mt-4 text-sm leading-7 text-slate">{item.body}</p>
           </article>
         ))}

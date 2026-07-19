@@ -17,10 +17,34 @@ export default function HeaderSection() {
         <a href="#top" className="font-heading text-2xl font-extrabold tracking-tightest">
           OmniBrief
         </a>
-        <nav className="hidden items-center gap-8 text-sm text-slate md:flex" aria-label="Main navigation">
-          <a href="#problem" className={navClass("problem")} aria-label="Why section" aria-current={activeSection === "problem" ? "true" : undefined}>Why</a>
-          <a href="#process" className={navClass("process")} aria-label="How it works section" aria-current={activeSection === "process" ? "true" : undefined}>How it works</a>
-          <a href="#audience" className={navClass("audience")} aria-label="Who it&apos;s for section" aria-current={activeSection === "audience" ? "true" : undefined}>Who it&apos;s for</a>
+        <nav
+          className="hidden items-center gap-8 text-sm text-slate md:flex"
+          aria-label="Main navigation"
+        >
+          <a
+            href="#problem"
+            className={navClass("problem")}
+            aria-label="Why section"
+            aria-current={activeSection === "problem" ? "true" : undefined}
+          >
+            Why
+          </a>
+          <a
+            href="#process"
+            className={navClass("process")}
+            aria-label="How it works section"
+            aria-current={activeSection === "process" ? "true" : undefined}
+          >
+            How it works
+          </a>
+          <a
+            href="#audience"
+            className={navClass("audience")}
+            aria-label="Who it's for section"
+            aria-current={activeSection === "audience" ? "true" : undefined}
+          >
+            Who it&apos;s for
+          </a>
         </nav>
         <a
           href="https://github.com/tanishra/OmniBrief"
