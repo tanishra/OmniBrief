@@ -1,7 +1,7 @@
-from src.logger import logger
 import re
-from typing import List, Dict, Any
+from typing import Dict, List
 from urllib.parse import urlparse, urlunparse
+
 
 def get_tokens(text: str) -> set:
     text = re.sub(r'[^a-z0-9\s]', '', text.lower())
@@ -26,23 +26,24 @@ def deduplicate_and_correlate(data: Dict[str, List[Dict]]) -> Dict[str, List[Dic
     1. Deduplicates titles across sources.
     2. Correlates ArXiv papers with GitHub repos (Fix 3).
     """
-    clean_data = {k: [] for k in data.keys()}
-    seen_titles_tokens = []
+    clean_data: Dict[str, List[Dict]] = {k: [] for k in data.keys()}
+    seen_titles_tokens: List[set] = []
     seen_urls = set()
-    
+
     # Priority order for 'primary' versions
     sections = ["arxiv", "github", "hn", "news", "ph", "reddit"]
-    
+
     # Pre-process ArXiv for correlation
-    arxiv_papers = data.get("arxiv", [])
+    data.get("arxiv", [])
     github_repos = data.get("github", [])
 
     for section in sections:
         items = data.get(section, [])
         for item in items:
             title = (item.get("title") or item.get("name") or "").strip()
-            if not title: continue
-            
+            if not title:
+                continue
+
             # Cross-Source Deduplication using Jaccard Similarity
             is_dupe = False
             title_tokens = get_tokens(title)
@@ -58,7 +59,8 @@ def deduplicate_and_correlate(data: Dict[str, List[Dict]]) -> Dict[str, List[Dic
                     is_dupe = True
                     break
 
-            if is_dupe: continue
+            if is_dupe:
+                continue
 
             norm_url = normalize_url(item.get("url") or "")
             if norm_url and norm_url in seen_urls:
@@ -77,7 +79,7 @@ def deduplicate_and_correlate(data: Dict[str, List[Dict]]) -> Dict[str, List[Dic
 
             seen_titles_tokens.append(title_tokens)
             clean_data[section].append(item)
-                
+
     return clean_data
 
 def rank_by_innovation(data: Dict[str, List[Dict]]) -> Dict[str, List[Dict]]:
@@ -85,21 +87,21 @@ def rank_by_innovation(data: Dict[str, List[Dict]]) -> Dict[str, List[Dict]]:
     Fix 1: Innovation Ranking.
     Prioritizes items that are correlated (Paper+Code) or high-growth.
     """
-    ranked = {k: [] for k in data.keys()}
-    
+    ranked: Dict[str, List[Dict]] = {k: [] for k in data.keys()}
+
     # 1. ArXiv: Prioritize those with implementations
     arxiv = data.get("arxiv", [])
     ranked["arxiv"] = sorted(arxiv, key=lambda x: "implemented_by" in x, reverse=True)[:10]
-    
+
     # 2. GitHub: Filter out already correlated ones, then rank by "Innovation Signal"
     # Innovation Signal = Stars / (Days since creation + 1)
     github = [r for r in data.get("github", []) if not r.get("is_correlated")]
     ranked["github"] = github[:12]
-    
+
     # 3. Community & News
     ranked["hn"] = data.get("hn", [])[:8]
     ranked["reddit"] = data.get("reddit", [])[:8]
     ranked["news"] = data.get("news", [])[:15]
     ranked["ph"] = data.get("ph", [])[:6]
-    
+
     return ranked

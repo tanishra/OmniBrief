@@ -1,10 +1,9 @@
-from __future__ import annotations
 """
 src/persistence.py
 PostgreSQL-backed persistence for digest history, subscribers, tokens, and delivery logs.
 """
 
-from src.logger import logger
+from __future__ import annotations
 
 import hashlib
 import hmac
@@ -27,7 +26,6 @@ from config import (
     SUBSCRIBE_TOKEN_TTL_HOURS,
     UNSUBSCRIBE_TOKEN_TTL_DAYS,
 )
-
 
 _pool: ConnectionPool | None = None
 
@@ -332,7 +330,7 @@ def upsert_pending_subscriber(email: str) -> Dict[str, Any]:
             )
             row = cur.fetchone()
         conn.commit()
-    return dict(row)
+    return dict(row) if row else {}
 
 
 def list_active_subscribers_for_campaign(campaign_key: str) -> List[Dict[str, Any]]:
@@ -403,12 +401,12 @@ def _consume_token(raw_token: str, purpose: str) -> Optional[Dict[str, Any]]:
             row = cur.fetchone()
             if not row:
                 return None
-            if row["used_at"] is not None or row["expires_at"] < now:
+            if row["used_at"] is not None or row["expires_at"] < now:  # type: ignore[call-overload]
                 return None
 
             cur.execute(
                 "UPDATE subscriber_tokens SET used_at = %s WHERE id = %s",
-                (now, row["token_id"]),
+                (now, row["token_id"]),  # type: ignore[call-overload]
             )
             if purpose == "confirm":
                 cur.execute(
@@ -420,7 +418,7 @@ def _consume_token(raw_token: str, purpose: str) -> Optional[Dict[str, Any]]:
                     WHERE id = %s
                     RETURNING id, email, status
                     """,
-                    (now, row["subscriber_id"]),
+                    (now, row["subscriber_id"]),  # type: ignore[call-overload]
                 )
             else:
                 cur.execute(
@@ -431,7 +429,7 @@ def _consume_token(raw_token: str, purpose: str) -> Optional[Dict[str, Any]]:
                     WHERE id = %s
                     RETURNING id, email, status
                     """,
-                    (now, row["subscriber_id"]),
+                    (now, row["subscriber_id"]),  # type: ignore[call-overload]
                 )
             updated = cur.fetchone()
         conn.commit()
@@ -460,7 +458,8 @@ def enforce_rate_limit(bucket: str, subject: str, limit: int, window_seconds: in
 
             # Count recent requests
             cur.execute("SELECT COUNT(*) FROM rate_limits WHERE key = %s AND timestamp >= %s", (key, cutoff))
-            count = cur.fetchone()[0]
+            row = cur.fetchone()
+            count = row[0] if row else 0
 
             if count >= limit:
                 conn.commit()
